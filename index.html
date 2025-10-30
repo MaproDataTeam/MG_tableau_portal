@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau Portal</title> <script type='module' src='https://prod-in-a.online.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js'></script>
+
+    <style>
+        /* Basic page styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        /* Filter pane styles */
+        .toggle-button {
+            background-color: #007ab8;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            border-radius: 0; /* No rounded corners */
+        }
+
+        .toggle-button:hover {
+            background-color: #005a8c;
+        }
+        
+        /* The filter pane that collapses */
+        .filter-pane {
+            background-color: #ffffff;
+            padding: 20px;
+            border-bottom: 2px solid #ddd;
+            display: block; 
+        }
+
+        .controls-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+        
+        .control-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .control-group select,
+        .control-group input[type="date"] {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+        }
+
+        .control-group.checkbox-group label {
+            display: flex;
+            align-items: center;
+            font-weight: normal;
+        }
+        
+        .control-group.checkbox-group input {
+            margin-right: 8px;
+        }
+
+        .clear-button {
+            padding: 8px 15px;
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            align-self: flex-end;
+        }
+        
+        .clear-button:hover {
+            background-color: #c9302c;
+        }
+
+        /* Dashboard container styles */
+        .viz-container {
+            display: flex;
+            flex-direction: column; /* Stacks vizzes vertically */
+            width: 100%;
+            padding: 0; /* No padding */
+            margin: 0; /* No margin */
+            box-sizing: border-box;
+        }
+
+        /* Both viz elements will take full width and 100% of viewport height */
+        tableau-viz {
+            width: 100%; 
+            height: 100vh; /* Set height to 100% of the viewport/iframe height */
+        }
+        
+        /* Style for the separator */
+        .viz-separator {
+            border: 0;
+            height: 1px;
+            background-color: #ccc;
+            margin: 0; /* No margin */
+        }
+    </style>
+</head>
+<body>
+
+    <button id="toggle-filter-btn" class="toggle-button">Toggle Filter Pane</button>
+    
+    <div id="filter-pane" class="filter-pane">
+        <div class="controls-container">
+            <div class="control-group">
+                <label for="branch-filter">Branch</label>
+                <select id="branch-filter" class="filter-select" data-field-name="Clean Branch Name">
+                    <option value="All">(All)</option>
+                    <option value="AUNDH RETAIL STORE">AUNDH RETAIL STORE</option>
+                    <option value="FOOD COUNTER GUREGHAR">FOOD COUNTER GUREGHAR</option>
+                    <option value="FOOD COUNTER LONAVALA">FOOD COUNTER LONAVALA</option>
+                    <option value="FOOD COUNTER SHENDURJANE">FOOD COUNTER SHENDURJANE</option>
+                    <option value="MAPRO FACTORY TOUR & ADVENTURE PARK">MAPRO FACTORY TOUR & ADVENTURE PARK</option>
+                    <option value="ONLINE SALES WAREHOUSE">ONLINE SALES WAREHOUSE</option>
+                    <option value="PST, HIGHWAY AND MAHABALESHWAR MARKET">PST, HIGHWAY AND MAHABALESHWAR MARKET</option>
+                    <option value="Retail Drive Inn">Retail Drive Inn</option>
+                    <option value="Retail Gureghar">Retail Gureghar</option>
+                    <option value="Retail Gureghar WH">Retail Gureghar WH</option>
+                    <option value="Retail Lonavala">Retail Lonavala</option>
+                    <option value="Retail Online">Retail Online</option>
+                    <option value="Retail Shendurjane">Retail Shendurjane</option>
+                    <option value="TBT STORE GUREGHAR">TBT STORE GUREGHAR</option>
+                    <option value="TBT STORE VALVAN LONAVALA">TBT STORE VALVAN LONAVALA</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="category-filter">Category</label>
+                <select id="category-filter" class="filter-select" data-field-name="Category">
+                    <option value="All">(All)</option>
+                    <option value="CAFERO">CAFERO</option>
+                    <option value="CHOCOLATE">CHOCOLATE</option>
+                    <option value="FOOD COUNTER">FOOD COUNTER</option>
+                    <option value="FRUIT FILLINGS">FRUIT FILLINGS</option>
+                    <option value="FRUIT JELLY AND BARS">FRUIT JELLY AND BARS</option>
+                    <option value="HAMPERS">HAMPERS</option>
+                    <option value="JAMS AND SPREADS">JAMS AND SPREADS</option>
+                    <option value="KHAKHRA">KHAKHRA</option>
+                    <option value="LOUNGE">LOUNGE</option>
+                    <option value="OTHER">OTHER</option>
+                    <option value="PACKAGING MATERIAL">PACKAGING MATERIAL</option>
+                    <option value="PERSONAL CARE">PERSONAL CARE</option>
+                    <option value="PRA SHARBATS AND SYRUPS">PRA SHARBATS AND SYRUPS</option>
+                    <option value="SCS">SCS</option>
+                    <option value="SNACKERY">SNACKERY</option>
+                    <option value="TRADING">TRADING</option>
+                    <option value="Unmapped">Unmapped</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="subcategory-filter">Subcategory</label>
+                <select id="subcategory-filter" class="filter-select" data-field-name="Subcategory">
+                    <option value="All">(All)</option>
+                    <option value="ADVENTURE PARK">ADVENTURE PARK</option>
+                    <option value="BANANA CHIPS">BANANA CHIPS</option>
+                    <option value="CAFREO">CAFREO</option>
+                    <option value="CHOCO SPREAD">CHOCO SPREAD</option>
+                    <option value="CHOCOLATE BARS">CHOCOLATE BARS</option>
+                    <option value="CHOCOLATE COATED NUTS">CHOCOLATE COATED NUTS</option>
+                    <option value="CHOCOLATE COMBI PACK">CHOCOLATE COMBI PACK</option>
+                    <option value="CHOCOLATE DRAGEE">CHOCOLATE DRAGEE</option>
+                    <option value="CHOCOLATE GIFT PACK">CHOCOLATE GIFT PACK</option>
+                    <option value="CHOCOLATE NUTS">CHOCOLATE NUTS</option>
+                    <option value="CHOCOLATE STANDEE POUCH">CHOCOLATE STANDEE POUCH</option>
+                    <option value="CHOCOLERO">CHOCOLERO</option>
+                    <option value="COFFEE FLAVOUR">COFFEE FLAVOUR</option>
+                    <option value="COOKIES">COOKIES</option>
+                    <option value="COOKIES HAMPER">COOKIES HAMPER</option>
+                    <option value="COOLIO 500G">COOLIO 500G</option>
+                    <option value="COSMETICS">COSMETICS</option>
+                    <option value="Cotton Bag">Cotton Bag</option>
+                    <option value="CRUSHES">CRUSHES</option>
+                    <option value="CRUSHES COMBI">CRUSHES COMBI</option>
+                    <option value.="CRUSHES COMBI PACK">CRUSHES COMBI PACK</option>
+                    <option value="CUBES">CUBES</option>
+                    <option value="CUBES HAMPER">CUBES HAMPER</option>
+                    <option value="DESSERT">DESSERT</option>
+                    <option value="DIWALI HAMPER">DIWALI HAMPER</option>
+                    <option value="DRINKS">DRINKS</option>
+                    <option value="DRIVER DHABA">DRIVER DHABA</option>
+                    <option value="FACTORY TOUR">FACTORY TOUR</option>
+                    <option value="FALCHOOS">FALCHOOS</option>
+                    <option value="FALCHOOS HAMPER">FALCHOOS HAMPER</option>
+                    <option value="FALERO">FALERO</option>
+                    <option value="FALERO COMBI PACK">FALERO COMBI PACK</option>
+                    <option value="FALERO DRINK COMBI">FALERO DRINK COMBI</option>
+                    <option value="FALERO HAMPER">FALERO HAMPER</option>
+                    <option value="FALERO RAIN FALL">FALERO RAIN FALL</option>
+                    <option value="FALERO RAINFALL">FALERO RAINFALL</option>
+                    <option value="FALERO SPARKY">FALERO SPARKY</option>
+                    <option value="FLAG CAPS">FLAG CAPS</option>
+                    <option value="FRENCH FRY">FRENCH FRY</option>
+                    <option value="FRUBA">FRUBA</option>
+                    <option value="FRUBBLE">FRUBBLE</option>
+                    <option value="FRUBBLE COMBI PACK">FRUBBLE COMBI PACK</option>
+                    <option value="FRUBBLE FRUIT SNACK">FRUBBLE FRUIT SNACK</option>
+                    <option value="FRUDIP">FRUDIP</option>
+                    <option value="FRUIT AND VEGITABLE">FRUIT AND VEGITABLE</option>
+                    <option value="FRUIT FILLINGS">FRUIT FILLINGS</option>
+                    <option value="FRUIT FILLINGS 1KG">FRUIT FILLINGS 1KG</option>
+                    <option value="FRUITY SWEETS AND OTHERS">FRUITY SWEETS AND OTHERS</option>
+                    <option value="FRUITY SWEETS HAMPER">FRUITY SWEETS HAMPER</option>
+                    <option value="GHEE">GHEE</option>
+                    <option value="GIFT HAMPER">GIFT HAMPER</option>
+                    <option value="GIFT ITEMS">GIFT ITEMS</option>
+                    <option value="GOAT HAMPER">GOAT HAMPER</option>
+                    <option value="GOLIO SPARK">GOLIO SPARK</option>
+                    <option value="GOLIO SPARK 1KG">GOLIO SPARK 1KG</option>
+                    <option value="GREETINGS HAMPER">GREETINGS HAMPER</option>
+                    <option value="GULKAND">GULKAND</option>
+                    <option value="HONEY">HONEY</option>
+                    <option value="ICE CREAM">ICE CREAM</option>
+                    <option value="JAGGERY">JAGGERY</option>
+                    <option value="JAM">JAM</option>
+                    <option value="JAM AND KETCHUP COMBI">JAM AND KETCHUP COMBI</option>
+                    <option value="J-POP">J-POP</option>
+                    <option value="KETCHUP">KETCHUP</option>
+                    <option value="KHAKHRA">KHAKHRA</option>
+                    <option value="MAPRO HAMPER">MAPRO HAMPER</option>
+                    <option value="MAZAANA HAMPER">MAZAANA HAMPER</option>
+                    <option value="MIX HAMPER">MIX HAMPER</option>
+                    <option value="MIXOLOGY KIT">MIXOLOGY KIT</option>
+                    <option value="NACHOS">NACHOS</option>
+                    <option value="OTHER">OTHER</option>
+                    <option value="OTHER TRADING">OTHER TRADING</option>
+                    <option value="PAANDE">PAANDE</option>
+                    <option value="PACKAGING MATERIAL">PACKAGING MATERIAL</option>
+                    <option value="PACKING BAG">PACKING BAG</option>
+                    <option value="PEANUT BUTTER">PEANUT BUTTER</option>
+                    <option value="PIZZA">PIZZA</option>
+                    <option value="PIZZA SAUCE">PIZZA SAUCE</option>
+                    <option value="PLANTS SALES">PLANTS SALES</option>
+                    <option value="PONCHO">PONCHO</option>
+                    <option value="PRA">PRA</option>
+                    <option value="PRA PRESERVE">PRA PRESERVE</option>
+                    <option value="PRA SHARBATS">PRA SHARBATS</option>
+                    <option value="PRA SYRUPS">PRA SYRUPS</option>
+                    <option value="PRALINES">PRALINES</option>
+                    <option value="RAKSHABANDHAN HAMPER">RAKSHABANDHAN HAMPER</option>
+                    <option value="RTD">RTD</option>
+                    <option value="RTD COMBI">RTD COMBI</option>
+                    <option value="SANDWICH & SOUP">SANDWICH & SOUP</option>
+                    <option value="SHIPING CHARGES">SHIPING CHARGES</option>
+                    <option value="SKIN CARE">SKIN CARE</option>
+                    <option value="SPARKY COMBO">SPARKY COMBO</option>
+                    <option value="SPICE DROPS">SPICE DROPS</option>
+                    <option value="SQUASH COMBI">SQUASH COMBI</option>
+                    <option value="SQUASHES">SQUASHES</option>
+                    <option value="SUGAR">SUGAR</option>
+                    <option value="Syrups">Syrups</option>
+                    <option value="SYRUPS COMBI">SYRUPS COMBI</option>
+                    <option value="SYRUPS HAMPER">SYRUPS HAMPER</option>
+                    <option value="TOPPINGS">TOPPINGS</option>
+                    <option value="TRADING">TRADING</option>
+                    <option value="UMBRELLA">UMBRELLA</option>
+                    <option value="Unmapped">Unmapped</option>
+                    <option value="WATER">WATER</option>
+                    <option value="WATER BOTTLE">WATER BOTTLE</option>
+                    <option value="White Mug">White Mug</option>
+                    <option value="WIRE BAG">WIRE BAG</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="brand-filter">Brand</label>
+                <select id="brand-filter" class="filter-select" data-field-name="brand">
+                    <option value="All">(All)</option>
+                    <option value="FALERO">FALERO</option>
+                    <option value="LOUNGE">LOUNGE</option>
+                    <option value="MAPRO">MAPRO</option>
+                    <option value="MAZAANA">MAZAANA</option>
+                    <option value="NA">NA</option>
+                    <option value="PRA">PRA</option>
+                    <option value="SNACKERY">SNACKERY</option>
+                    <option value="TBT">TBT</option>
+                    <option value="TRADING GOODS">TRADING GOODS</option>
+                    <option value="Unmapped">Unmapped</option>
+                    <option value="WHITTY">WHITTY</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label>&nbsp;</label> <button id="clear-all-btn" class="clear-button">Clear All Filters</button>
+            </div>
+
+            <div class="control-group checkbox-group">
+                <label>
+                    <input type="checkbox" class="param-change" data-param-name="[Align Dates?]">
+                    Align Dates?
+                </label>
+            </div>
+            <div class="control-group checkbox-group">
+                <label>
+                    <input type="checkbox" class="param-change" data-param-name="[Use Custom Date Range]">
+                    Use Custom Date Range
+                </label>
+            </div>
+            <div class="control-group">
+                <label for="custom-ty-start">Custom TY Start</label>
+                <input type="date" id="custom-ty-start" class="param-change" data-param-name="[Custom TY Start]">
+            </div>
+            <div class="control-group">
+                <label for="custom-ty-end">Custom TY End</label>
+                <input type="date" id="custom-ty-end" class="param-change" data-param-name="[Custom TY End]">
+            </div>
+            <div class="control-group">
+                <label for="custom-ly-start">Custom LY Start</label>
+                <input type="date" id="custom-ly-start" class="param-change" data-param-name="[Custom LY Start]">
+            </div>
+            <div class="control-group">
+                <label for="custom-ly-end">Custom LY End</label>
+                <input type="date" id="custom-ly-end" class="param-change" data-param-name="[Custom LY End]">
+            </div>
+             <div class="control-group checkbox-group">
+                <label>
+                    <input type="checkbox" class="param-change" data-param-name="[Use Manual Analysis Start Point]">
+                    Use Manual Analysis Start Point
+                </label>
+            </div>
+             <div class="control-group">
+                <label for="manual-analysis-start">Manual Analysis Start Point</label>
+                <input type="date" id="manual-analysis-start" class="param-change" data-param-name="[Manual Analysis Start Point]">
+            </div>
+        </div>
+    </div>
+
+    <div class="viz-container">
+        <tableau-viz 
+            id="viz1"
+            src="https://prod-in-a.online.tableau.com/t/vikasg-ae2111f8b2/views/MGDashboardDraftv2/Dashboard2"
+            toolbar="hidden" 
+            hide-tabs>
+        </tableau-viz>
+
+        <hr class="viz-separator">
+
+        <tableau-viz 
+            id="viz2"
+            src="https://prod-in-a.online.tableau.com/t/vikasg-ae2111f8b2/views/ExecutiveSummary2/Executive2"
+            toolbar="hidden" 
+            hide-tabs>
+        </tableau-viz>
+    </div>
+
+    <script>
+        // Wait for the DOM to be fully loaded before running scripts
+        document.addEventListener("DOMContentLoaded", () => {
+            
+            // --- Get Element References ---
+            const viz1 = document.getElementById("viz1");
+            const viz2 = document.getElementById("viz2");
+            const filterPane = document.getElementById("filter-pane");
+            const toggleButton = document.getElementById("toggle-filter-btn");
+            const clearAllButton = document.getElementById("clear-all-btn");
+            const allFilterSelects = document.querySelectorAll(".filter-select");
+            const allParamInputs = document.querySelectorAll(".param-change");
+
+            // --- Toggle Filter Pane ---
+            toggleButton.addEventListener("click", () => {
+                const isHidden = filterPane.style.display === "none";
+                filterPane.style.display = isHidden ? "block" : "none";
+                toggleButton.textContent = isHidden ? "Toggle Filter Pane" : "Show Filter Pane";
+            });
+
+            // --- Filter Handlers ---
+            
+            // Listen for changes on any filter dropdown
+            allFilterSelects.forEach(select => {
+                select.addEventListener("change", (event) => {
+                    handleFilterChange(event.target);
+                });
+            });
+
+            async function handleFilterChange(selectElement) {
+                const fieldName = selectElement.dataset.fieldName;
+                const value = selectElement.value;
+                
+                const workbook1 = viz1.workbook;
+                const workbook2 = viz2.workbook;
+
+                if (!workbook1 || !workbook2) {
+                    console.error("One or both vizzes are not ready.");
+                    return;
+                }
+
+                console.log(`Applying filter: ${fieldName} = ${value}`);
+
+                try {
+                    if (value === "All") {
+                        // Clear the filter on both dashboards
+                        await Promise.all([
+                            clearAllWorksheetsFilter(workbook1, fieldName),
+                            clearAllWorksheetsFilter(workbook2, fieldName)
+                        ]);
+                    } else {
+                        // Apply the filter to both dashboards
+                        await Promise.all([
+                            applyToAllWorksheets(workbook1, fieldName, [value], "replace"),
+                            applyToAllWorksheets(workbook2, fieldName, [value], "replace")
+                        ]);
+                    }
+                    console.log(`Filter update complete for ${fieldName}.`);
+                } catch (error) {
+                    console.error(`Error applying filter ${fieldName}:`, error);
+                }
+            }
+            
+            // Clear All button
+            clearAllButton.addEventListener("click", async () => {
+                console.log("Clearing all filters...");
+                const workbook1 = viz1.workbook;
+                const workbook2 = viz2.workbook;
+
+                if (!workbook1 || !workbook2) {
+                    console.error("One or both vizzes are not ready.");
+                    return;
+                }
+                
+                const clearPromises = [];
+                allFilterSelects.forEach(select => {
+                    // Reset dropdown in UI
+                    select.value = "All"; 
+                    // Add clear operation to promise array
+                    const fieldName = select.dataset.fieldName;
+                    clearPromises.push(clearAllWorksheetsFilter(workbook1, fieldName));
+                    clearPromises.push(clearAllWorksheetsFilter(workbook2, fieldName));
+                });
+                
+                try {
+                    await Promise.all(clearPromises);
+                    console.log("All filters cleared.");
+                } catch (error)
+ {
+                    console.error("Error clearing all filters:", error);
+                }
+            });
+
+
+            // --- Parameter Handlers ---
+
+            // Listen for changes on any parameter input (checkbox or date)
+            allParamInputs.forEach(input => {
+                input.addEventListener("change", (event) => {
+                    handleParamChange(event.target);
+                });
+            });
+
+            async function handleParamChange(inputElement) {
+                const paramName = inputElement.dataset.paramName;
+                const value = (inputElement.type === 'checkbox') ? inputElement.checked : inputElement.value;
+                
+                const workbook1 = viz1.workbook;
+                const workbook2 = viz2.workbook;
+
+                if (!workbook1 || !workbook2) {
+                    console.error("One or both vizzes are not ready.");
+                    return;
+                }
+                
+                console.log(`Changing parameter: ${paramName} = ${value}`);
+
+                try {
+                    // Apply parameter to BOTH vizzes.
+                    // If viz2 doesn't have the param, it will be ignored without error.
+                    await Promise.all([
+                        workbook1.changeParameterValueAsync(paramName, value),
+                        workbook2.changeParameterValueAsync(paramName, value)
+                    ]);
+                    console.log(`Applied parameter to BOTH vizzes.`);
+                } catch (error) {
+                    // This will catch errors, but we log them instead of stopping
+                    console.error(`Error changing parameter ${paramName}:`, error);
+                }
+            }
+
+
+            // --- Tableau API Helper Functions ---
+            
+            /**
+             * Applies a filter to ALL worksheets within a workbook.
+             */
+            async function applyToAllWorksheets(workbook, fieldName, values, updateType) {
+                try {
+                    const worksheets = await workbook.getWorksheetsAsync();
+                    const filterPromises = worksheets.map(ws => 
+                        ws.applyFilterAsync(fieldName, values, updateType)
+                    );
+                    return Promise.all(filterPromises);
+                } catch (e) {
+                    console.error("Error in applyToAllWorksheets:", e);
+                }
+            }
+
+            /**
+             * Clears a filter from ALL worksheets within a workbook.
+             */
+            async function clearAllWorksheetsFilter(workbook, fieldName) {
+                 try {
+                    const worksheets = await workbook.getWorksheetsAsync();
+                    const clearPromises = worksheets.map(ws => 
+                        ws.clearFilterAsync(fieldName)
+                    );
+                    return Promise.all(clearPromises);
+                } catch (e) {
+                    console.error("Error in clearAllWorksheetsFilter:", e);
+                }
+            }
+
+        });
+    </script>
+
+</body>
+</html>

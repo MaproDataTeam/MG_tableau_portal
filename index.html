@@ -228,9 +228,9 @@
                             <label><input type="checkbox" value="All" class="filter-all-cb" /> (All)</label>
                             <label><input type="checkbox" value="CAFERO" /> CAFERO</label>
                             <label><input type="checkbox" value="CHOCOLATE" /> CHOCOLATE</label>
+                            <label><input type="checkbox" value="FALERO AND FRUIT CHEWS" /> FALERO AND FRUIT CHEWS</label>
                             <label><input type="checkbox" value="FOOD COUNTER" /> FOOD COUNTER</label>
                             <label><input type="checkbox" value="FRUIT FILLINGS" /> FRUIT FILLINGS</label>
-                            <label><input type="checkbox" value="FRUIT JELLY AND BARS" /> FRUIT JELLY AND BARS</label>
                             <label><input type="checkbox" value="HAMPERS" /> HAMPERS</label>
                             <label><input type="checkbox" value="JAMS AND SPREADS" /> JAMS AND SPREADS</label>
                             <label><input type="checkbox" value="KHAKHRA" /> KHAKHRA</label>
@@ -273,7 +273,6 @@
                             <label><input type="checkbox" value="COSMETICS" /> COSMETICS</label>
                             <label><input type="checkbox" value="Cotton Bag" /> Cotton Bag</label>
                             <label><input type="checkbox" value="CRUSHES" /> CRUSHES</label>
-                            <label><input type="checkbox" value="CRUSHES COMBI" /> CRUSHES COMBI</label>
                             <label><input type="checkbox" value="CRUSHES COMBI PACK" /> CRUSHES COMBI PACK</label>
                             <label><input type="checkbox" value="CUBES" /> CUBES</label>
                             <label><input type="checkbox" value="CUBES HAMPER" /> CUBES HAMPER</label>
@@ -289,7 +288,6 @@
                             <label><input type="checkbox" value="FALERO DRINK COMBI" /> FALERO DRINK COMBI</label>
                             <label><input type="checkbox" value="FALERO HAMPER" /> FALERO HAMPER</label>
                             <label><input type="checkbox" value="FALERO RAIN FALL" /> FALERO RAIN FALL</label>
-                            <label><input type="checkbox" value="FALERO RAINFALL" /> FALERO RAINFALL</label>
                             <label><input type="checkbox" value="FALERO SPARKY" /> FALERO SPARKY</label>
                             <label><input type="checkbox" value="FLAG CAPS" /> FLAG CAPS</label>
                             <label><input type="checkbox" value="FRENCH FRY" /> FRENCH FRY</label>
@@ -327,6 +325,7 @@
                             <label><input type="checkbox" value="OTHER TRADING" /> OTHER TRADING</label>
                             <label><input type="checkbox" value="PAANDE" /> PAANDE</label>
                             <label><input type="checkbox" value="PACKAGING MATERIAL" /> PACKAGING MATERIAL</label>
+                            <label><input type="checkbox" value="PACKING BAG" /> PACKING BAG</label>
                             <label><input type="checkbox" value="PEANUT BUTTER" /> PEANUT BUTTER</label>
                             <label><input type="checkbox" value="PIZZA" /> PIZZA</label>
                             <label><input type="checkbox" value="PIZZA SAUCE" /> PIZZA SAUCE</label>
@@ -350,13 +349,12 @@
                             <label><input type="checkbox" value="SQUASH COMBI" /> SQUASH COMBI</label>
                             <label><input type="checkbox" value="SQUASHES" /> SQUASHES</label>
                             <label><input type="checkbox" value="SUGAR" /> SUGAR</label>
-                            <label><input type="checkbox" value="Syrups" /> Syrups</label>
+                            <label><input type="checkbox"value="Syrups" /> Syrups</label>
                             <label><input type="checkbox" value="SYRUPS COMBI" /> SYRUPS COMBI</label>
                             <label><input type="checkbox" value="SYRUPS HAMPER" /> SYRUPS HAMPER</label>
                             <label><input type="checkbox" value="TOPPINGS" /> TOPPINGS</label>
                             <label><input type="checkbox" value="TRADING" /> TRADING</label>
                             <label><input type="checkbox" value="UMBRELLA" /> UMBRELLA</label>
-                            <label><input type="checkbox" value="WATER" /> WATER</label>
                             <label><input type="checkbox" value="WATER BOTTLE" /> WATER BOTTLE</label>
                             <label><input type="checkbox" value="White Mug" /> White Mug</label>
                             <label><input type="checkbox" value="WIRE BAG" /> WIRE BAG</label>
@@ -373,10 +371,12 @@
                         <div class="dropdown-content">
                             <label><input type="checkbox" value="All" class="filter-all-cb" /> (All)</label>
                             <label><input type="checkbox" value="FALERO" /> FALERO</label>
+                            <label><input type="checkbox" value="FOOD COUNTER" /> FOOD COUNTER</label>
                             <label><input type="checkbox" value="LOUNGE" /> LOUNGE</label>
                             <label><input type="checkbox" value="MAPRO" /> MAPRO</label>
                             <label><input type="checkbox" value="MAZAANA" /> MAZAANA</label>
                             <label><input type="checkbox" value="NA" /> NA</label>
+                            <label><input type="checkbox" value="OTHER" /> OTHER</label>
                             <label><input type="checkbox" value="PRA" /> PRA</label>
                             <label><input type="checkbox" value="SNACKERY" /> SNACKERY</label>
                             <label><input type="checkbox" value="TBT" /> TBT</label>
@@ -507,7 +507,7 @@
             async function applyToDashboardWorksheets(workbookObj, fieldName, values, updateType) {
                 try {
                     const dashboard = workbookObj.activeSheet;
-                    const worksheets = dashboard.worksheets; 
+                    const worksheets = dashboard.worksheets; // Correct property
                     console.log(`...Applying filter to ${worksheets.length} sheets on dashboard ${dashboard.name}`);
                     if (worksheets.length === 0) {
                          console.warn("No worksheets found on dashboard:", dashboard.name);
@@ -525,7 +525,7 @@
             async function clearDashboardWorksheetsFilter(workbookObj, fieldName) {
                  try {
                     const dashboard = workbookObj.activeSheet;
-                    const worksheets = dashboard.worksheets; 
+                    const worksheets = dashboard.worksheets; // Correct property
                     console.log(`...Clearing filter from ${worksheets.length} sheets on dashboard ${dashboard.name}`);
                     if (worksheets.length === 0) {
                          console.warn("No worksheets found on dashboard:", dashboard.name);

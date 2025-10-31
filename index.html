@@ -25,7 +25,7 @@
 
         /* Filter pane styles */
         .toggle-button {
-            background-color: #007ab8;
+            background-color: #FA8072; /* CHANGED: Salmon pink */
             color: white;
             border: none;
             padding: 10px 15px;
@@ -38,14 +38,14 @@
         }
 
         .toggle-button:hover {
-            background-color: #005a8c;
+            background-color: #CD5C5C; /* CHANGED: Darker red */
         }
         
         .filter-pane {
             background-color: #ffffff;
             padding: 20px;
             border-bottom: 2px solid #ddd;
-            display: block; 
+            display: none; /* CHANGED: Starts closed by default */
         }
 
         .controls-container {
@@ -165,7 +165,7 @@
             background-color: #c9302c;
         }
 
-        /* --- FIX: Sizing Container --- */
+        /* --- Sizing Container --- */
         .viz-wrapper {
             width: 100%;
             height: 800px; /* Set fixed height on the WRAPPER */
@@ -190,7 +190,7 @@
 <body>
 
     <div id="sticky-header">
-        <button id="toggle-filter-btn" class="toggle-button">Close Filters</button>
+        <button id="toggle-filter-btn" class="toggle-button">☰ Filters</button>
         
         <div id="filter-pane" class="filter-pane">
             <div class="controls-container">
@@ -474,7 +474,8 @@
             toggleButton.addEventListener("click", () => {
                 const isHidden = filterPane.style.display === "none";
                 filterPane.style.display = isHidden ? "block" : "none";
-                toggleButton.textContent = isHidden ? "Close Filters" : "Filters";
+                // CHANGED: Updated text logic
+                toggleButton.textContent = isHidden ? "X Close" : "☰ Filters";
             });
         
             // --- Dropdown logic ---

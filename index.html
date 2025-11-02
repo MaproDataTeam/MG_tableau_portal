@@ -190,7 +190,7 @@
 <body>
 
     <div id="sticky-header">
-        <button id="toggle-filter-btn" class="toggle-button">☰ Filters</button>
+        <button id="toggle-filter-btn" class="toggle-button">☰ Page Filters</button>
         
         <div id="filter-pane" class="filter-pane">
             <div class="controls-container">
@@ -349,7 +349,7 @@
                             <label><input type="checkbox" value="SQUASH COMBI" /> SQUASH COMBI</label>
                             <label><input type="checkbox" value="SQUASHES" /> SQUASHES</label>
                             <label><input type="checkbox" value="SUGAR" /> SUGAR</label>
-                            <label><input type="checkbox"value="Syrups" /> Syrups</label>
+                            <label><input type="checkbox" value="Syrups" /> Syrups</label>
                             <label><input type="checkbox" value="SYRUPS COMBI" /> SYRUPS COMBI</label>
                             <label><input type="checkbox" value="SYRUPS HAMPER" /> SYRUPS HAMPER</label>
                             <label><input type="checkbox" value="TOPPINGS" /> TOPPINGS</label>
@@ -436,7 +436,7 @@
     </div> <div class="viz-wrapper">
         <tableau-viz 
             id="viz1"
-            src="https://prod-in-a.online.tableau.com/t/vikasg-ae2111f8b2/views/MGDashboardDraftv2/Dashboard2"
+            src="https://prod-in-a.online.tableau.com/t/vikasg-ae2111f8b2/views/MGdahsboardV3/ExecutiveSummary"
             toolbar="hidden" 
             hide-tabs>
         </tableau-viz>
@@ -477,7 +477,7 @@
                 const isHidden = filterPane.style.display === "none";
                 filterPane.style.display = isHidden ? "block" : "none";
                 // CHANGED: Updated text logic
-                toggleButton.textContent = isHidden ? "X Close" : "☰ Filters";
+                toggleButton.textContent = isHidden ? "X Close" : "☰ Page Filters";
             });
         
             // --- Dropdown logic ---
@@ -507,7 +507,7 @@
             async function applyToDashboardWorksheets(workbookObj, fieldName, values, updateType) {
                 try {
                     const dashboard = workbookObj.activeSheet;
-                    const worksheets = dashboard.worksheets; // Correct property
+                    const worksheets = dashboard.worksheets; 
                     console.log(`...Applying filter to ${worksheets.length} sheets on dashboard ${dashboard.name}`);
                     if (worksheets.length === 0) {
                          console.warn("No worksheets found on dashboard:", dashboard.name);
@@ -525,7 +525,7 @@
             async function clearDashboardWorksheetsFilter(workbookObj, fieldName) {
                  try {
                     const dashboard = workbookObj.activeSheet;
-                    const worksheets = dashboard.worksheets; // Correct property
+                    const worksheets = dashboard.worksheets; 
                     console.log(`...Clearing filter from ${worksheets.length} sheets on dashboard ${dashboard.name}`);
                     if (worksheets.length === 0) {
                          console.warn("No worksheets found on dashboard:", dashboard.name);
@@ -556,16 +556,27 @@
         
                 console.log(`Handling filter change for: ${fieldName}`);
                 try {
-                    if (!allCb.checked && selectedValues.length > 0) {
-                        // --- APPLY FILTER ---
+                    // --- CHANGED: New (All) logic ---
+                    if (allCb.checked) {
+                         // (All) is checked, apply ALL values
+                        const allValues = Array.from(checkboxes).map(cb => cb.value);
+                        console.log(`...Applying ALL ${allValues.length} values.`);
+                        if(allValues.length > 0) {
+                             await Promise.allSettled([
+                                applyToDashboardWorksheets(vizObj1, fieldName, allValues, "replace"),
+                                applyToDashboardWorksheets(vizObj2, fieldName, allValues, "replace")
+                            ]);
+                        }
+                    } else if (selectedValues.length > 0) {
+                        // --- APPLY SPECIFIC FILTERS ---
                         console.log(`...Applying values: ${JSON.stringify(selectedValues)}`);
                         await Promise.allSettled([
                             applyToDashboardWorksheets(vizObj1, fieldName, selectedValues, "replace"),
                             applyToDashboardWorksheets(vizObj2, fieldName, selectedValues, "replace")
                         ]);
                     } else {
-                        // --- CLEAR FILTER ---
-                        console.log(`...Clearing filter.`);
+                        // --- (All) is unchecked and 0 selected, so clear filter ---
+                        console.log(`...No values selected. Clearing filter.`);
                         await Promise.allSettled([
                             clearDashboardWorksheetsFilter(vizObj1, fieldName),
                             clearDashboardWorksheetsFilter(vizObj2, fieldName)
@@ -577,38 +588,34 @@
                 }
             }
         
+            // --- CHANGED: New "Clear All" logic ---
             async function handleClearAll() {
                 if (!viz1Ready || !viz2Ready) return;
-                console.log("Clearing all filters & parameters...");
-        
-                // Reset checkboxes in HTML
-                allFilterGroups.forEach(group => {
-                    group.querySelectorAll("input[type='checkbox']").forEach(cb => {
-                        cb.checked = cb.classList.contains('filter-all-cb');
-                    });
-                });
-        
-                // Clear filters in Tableau
-                const filterPromises = [];
-                allFilterGroups.forEach(group => {
-                    const field = group.dataset.fieldName;
-                    filterPromises.push(clearDashboardWorksheetsFilter(vizObj1, field));
-                    filterPromises.push(clearDashboardWorksheetsFilter(vizObj2, field));
-                });
-                await Promise.allSettled(filterPromises);
-                console.log("All filters cleared from Tableau.");
-        
-                // Reset parameter controls in HTML
+                console.log("Resetting all filters & parameters to default...");
+
+                // 1. Revert Viz 1 to its published state. This is fast.
+                try {
+                    await vizObj1.revertAllAsync();
+                    console.log("Viz 1 reverted to default.");
+                } catch (e) {
+                    console.error("Error reverting Viz 1:", e);
+                    return; // Stop if revert fails
+                }
+                
+                // 2. Reset HTML parameter controls
                 allParamInputs.forEach(inp => {
                     if (inp.type === "checkbox") inp.checked = false;
                     if (inp.type === "date") inp.value = "";
                 });
-        
-                // Sync parameter resets to Tableau
-                const paramResetPromises = Array.from(allParamInputs).map(inp => handleParamChange(inp, true)); // true = isInit/skipDelay
-                await Promise.allSettled(paramResetPromises);
-        
-                console.log("All parameters reset.");
+                
+                // 3. Re-run the default sync logic. This will:
+                //    - Read the new (default) state from Viz 1.
+                //    - Update the HTML filter checkboxes.
+                //    - Sync that default state to Viz 2.
+                //    - Sync the reset parameters to both.
+                await syncDefaults();
+                
+                console.log("All filters and parameters reset.");
             }
         
             // ------------------------------------------------------------------
@@ -661,25 +668,27 @@
             // ------------------------------------------------------------------
             // ---------------------- INITIALIZATION ----------------------------
             // ------------------------------------------------------------------
-        
-            async function initializeApp() {
-                console.log("Both vizzes ready — syncing defaults, filters, params.");
-        
-                // Wire filter listeners
+
+            // --- CHANGED: Split init logic from sync logic ---
+            function wireUpEventListeners() {
+                console.log("Wiring up event listeners...");
                 allFilterGroups.forEach(group => {
                     const allCb = group.querySelector(".filter-all-cb");
                     const others = group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)");
-        
+
+                    // Listener for the (All) checkbox
                     allCb.addEventListener("change", () => {
-                        if (allCb.checked) others.forEach(cb => cb.checked = false);
+                        const isChecked = allCb.checked;
+                        others.forEach(cb => cb.checked = isChecked); // Set all others to match
                         handleFilterChange(group, false); // false = not init
                     });
-        
+
+                    // Listeners for all other checkboxes
                     others.forEach(cb => {
                         cb.addEventListener("change", () => {
-                            if (cb.checked) allCb.checked = false;
-                            const anyChecked = Array.from(others).some(c => c.checked);
-                            if (!anyChecked) allCb.checked = true;
+                            // Check if all are checked
+                            const allOthersChecked = Array.from(others).every(c => c.checked);
+                            allCb.checked = allOthersChecked; // Sync (All) checkbox
                             handleFilterChange(group, false); // false = not init
                         });
                     });
@@ -691,7 +700,12 @@
                 });
         
                 clearAllButton.addEventListener("click", handleClearAll);
-        
+            }
+
+            // --- CHANGED: New function to sync state ---
+            async function syncDefaults() {
+                console.log("Syncing defaults, filters, params...");
+                
                 // --- Read default filters from Viz 1 (robustly) ---
                 try {
                     console.log("Attempting to read default filters from Viz 1...");
@@ -699,44 +713,45 @@
                     const worksheets = dashboard.worksheets || [];
                     if (!worksheets.length) throw new Error("No worksheets found on dashboard.");
         
-                    // Create a map to hold all applied filters
                     const appliedFilterMap = new Map();
-
-                    // Loop over ALL worksheets to find filters
                     for (const ws of worksheets) {
                         console.log(`...checking filters on sheet ${ws.name}`);
                         const filters = await ws.getFiltersAsync();
                         for (const f of filters) {
                             if (f.filterType === 'categorical' && !f.isAll) {
-                                // Add these values to our map
                                 const values = f.appliedValues.map(v => v.value);
                                 appliedFilterMap.set(f.fieldName, values);
                             }
                         }
                     }
                     console.log("Found applied filters:", appliedFilterMap);
+                    
+                    // --- Store this for 'Clear Filters' button ---
+                    defaultFilterState = new Map(appliedFilterMap);
 
                     // Now update the HTML based on the map
                     allFilterGroups.forEach(group => {
                         const fName = group.dataset.fieldName;
+                        const allCb = group.querySelector(".filter-all-cb");
+                        const others = group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)");
+
                         if (appliedFilterMap.has(fName)) {
                             const applied = appliedFilterMap.get(fName);
-                            // Check if array is empty (which can happen)
                             if (applied.length > 0) {
                                 console.log(`Setting default filter for ${fName}:`, applied);
-                                group.querySelector(".filter-all-cb").checked = false;
-                                
-                                group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)").forEach(cb => {
+                                others.forEach(cb => {
                                     cb.checked = applied.includes(cb.value);
                                 });
+                                allCb.checked = Array.from(others).every(c => c.checked);
                             } else {
                                 console.log(`Filter ${fName} was found but empty, setting to (All).`);
-                                group.querySelector(".filter-all-cb").checked = true;
+                                allCb.checked = true;
+                                others.forEach(cb => cb.checked = true);
                             }
                         } else {
-                            // No filter or (All) is selected
                             console.log(`No default filter found for ${fName}, setting to (All).`);
-                            group.querySelector(".filter-all-cb").checked = true;
+                            allCb.checked = true;
+                            others.forEach(cb => cb.checked = true);
                         }
                     });
         
@@ -745,6 +760,7 @@
                     // Fallback
                     allFilterGroups.forEach(group => {
                         group.querySelector(".filter-all-cb").checked = true;
+                        group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)").forEach(cb => cb.checked = true);
                     });
                 }
                 
@@ -760,10 +776,15 @@
                         .filter(cb => cb.checked)
                         .map(cb => cb.value);
 
-                    if (!allCb.checked && selectedValues.length > 0) {
+                    if (allCb.checked) {
+                        const allValues = Array.from(checkboxes).map(cb => cb.value);
+                        if(allValues.length > 0){
+                            filterSyncPromises.push(applyToDashboardWorksheets(vizObj2, fieldName, allValues, "replace"));
+                        }
+                    } else if (selectedValues.length > 0) {
                         filterSyncPromises.push(applyToDashboardWorksheets(vizObj2, fieldName, selectedValues, "replace"));
                     } else {
-                        filterSyncPromises.push(clearDashboardWorksheetsFilter(vizObj2, fieldName));
+                         filterSyncPromises.push(clearDashboardWorksheetsFilter(vizObj2, fieldName));
                     }
                 }
                 await Promise.allSettled(filterSyncPromises);
@@ -779,7 +800,14 @@
                 });
                 await Promise.allSettled(paramPromises);
         
-                console.log("Initialization complete.");
+                console.log("Initialization/Sync complete.");
+            }
+
+            // --- Main application start ---
+            async function initializeApp() {
+                console.log("Both vizzes ready. Wiring listeners and syncing defaults.");
+                wireUpEventListeners(); // Run this once
+                await syncDefaults(); // Run this now
             }
         
             // --- Viz readiness ---

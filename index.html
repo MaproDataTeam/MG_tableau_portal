@@ -150,15 +150,34 @@
             margin-right: 8px;
         }
 
+        /* --- NEW: Button Group Styling --- */
+        .button-group {
+            flex-direction: row;
+            align-items: flex-end;
+        }
+
+        .apply-button {
+            padding: 8px 15px;
+            background-color: transparent;
+            color: #007ab8; /* Blue */
+            border: 1px solid #007ab8;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .apply-button:hover {
+            background-color: #f0f8ff; /* Light blue hover */
+        }
+
         .clear-button {
             padding: 8px 15px;
             background-color: #d9534f;
             color: white;
-            border: none;
+            border: 1px solid #d9534f;
             border-radius: 4px;
             cursor: pointer;
             font-weight: bold;
-            align-self: flex-end;
         }
         
         .clear-button:hover {
@@ -428,8 +447,9 @@
                     </div>
                 </div>
 
-                <div class="control-group">
-                    <label>&nbsp;</label> <button id="clear-all-btn" class="clear-button">Clear All Filters</button>
+                <div class="control-group button-group">
+                    <label>&nbsp;</label> <button id="apply-btn" class="apply-button">Apply Filters</button>
+                    <button id="clear-all-btn" class="clear-button">Clear All Filters</button>
                 </div>
             </div>
         </div>
@@ -468,6 +488,8 @@
             const filterPane = document.getElementById("filter-pane");
             const toggleButton = document.getElementById("toggle-filter-btn");
             const clearAllButton = document.getElementById("clear-all-btn");
+            // --- NEW: Apply Button ---
+            const applyButton = document.getElementById("apply-btn");
             const allFilterGroups = document.querySelectorAll(".filter-group");
             const allParamInputs = document.querySelectorAll(".param-change");
             const allDropdownButtons = document.querySelectorAll(".dropdown-button");
@@ -476,7 +498,6 @@
             toggleButton.addEventListener("click", () => {
                 const isHidden = filterPane.style.display === "none";
                 filterPane.style.display = isHidden ? "block" : "none";
-                // CHANGED: Updated text logic
                 toggleButton.textContent = isHidden ? "X Close" : "☰ Page Filters";
             });
         
@@ -543,9 +564,7 @@
             async function handleFilterChange(group, isInit = false) {
                 if (!viz1Ready || !viz2Ready) return;
                 
-                if (!isInit) {
-                     await new Promise(r => setTimeout(r, 500)); // Delay for user clicks
-                }
+                // This function is now only called by Apply button or Init, so no delay needed here.
 
                 const fieldName = group.dataset.fieldName;
                 const allCb = group.querySelector(".filter-all-cb");
@@ -558,7 +577,6 @@
                 try {
                     // --- CHANGED: New (All) logic ---
                     if (allCb.checked) {
-                         // (All) is checked, apply ALL values
                         const allValues = Array.from(checkboxes).map(cb => cb.value);
                         console.log(`...Applying ALL ${allValues.length} values.`);
                         if(allValues.length > 0) {
@@ -586,6 +604,23 @@
                 } catch (err) {
                     console.error(`Error applying filter ${fieldName}:`, err);
                 }
+            }
+
+            // --- NEW: Apply All Filters Function ---
+            async function handleApplyAllFilters() {
+                if (!viz1Ready || !viz2Ready) return;
+                console.log("Applying all selected filters...");
+                await new Promise(r => setTimeout(r, 500)); // One delay for all
+
+                const filterSyncPromises = [];
+                for (const group of allFilterGroups) {
+                    // Call the existing handleFilterChange function for each group
+                    // Pass 'true' to skip its internal delay
+                    filterSyncPromises.push(handleFilterChange(group, true)); 
+                }
+                
+                await Promise.allSettled(filterSyncPromises);
+                console.log("All filters applied.");
             }
         
             // --- CHANGED: New "Clear All" logic ---
@@ -669,40 +704,7 @@
             // ---------------------- INITIALIZATION ----------------------------
             // ------------------------------------------------------------------
 
-            // --- CHANGED: Split init logic from sync logic ---
-            function wireUpEventListeners() {
-                console.log("Wiring up event listeners...");
-                allFilterGroups.forEach(group => {
-                    const allCb = group.querySelector(".filter-all-cb");
-                    const others = group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)");
-
-                    // Listener for the (All) checkbox
-                    allCb.addEventListener("change", () => {
-                        const isChecked = allCb.checked;
-                        others.forEach(cb => cb.checked = isChecked); // Set all others to match
-                        handleFilterChange(group, false); // false = not init
-                    });
-
-                    // Listeners for all other checkboxes
-                    others.forEach(cb => {
-                        cb.addEventListener("change", () => {
-                            // Check if all are checked
-                            const allOthersChecked = Array.from(others).every(c => c.checked);
-                            allCb.checked = allOthersChecked; // Sync (All) checkbox
-                            handleFilterChange(group, false); // false = not init
-                        });
-                    });
-                });
-        
-                // Parameter listeners
-                allParamInputs.forEach(input => {
-                    input.addEventListener("change", () => handleParamChange(input, false)); // false = not init
-                });
-        
-                clearAllButton.addEventListener("click", handleClearAll);
-            }
-
-            // --- CHANGED: New function to sync state ---
+            // --- This function syncs the HTML & Viz 2 to Viz 1's state ---
             async function syncDefaults() {
                 console.log("Syncing defaults, filters, params...");
                 
@@ -803,11 +805,45 @@
                 console.log("Initialization/Sync complete.");
             }
 
-            // --- Main application start ---
+            // --- This function runs ONCE on load ---
             async function initializeApp() {
                 console.log("Both vizzes ready. Wiring listeners and syncing defaults.");
-                wireUpEventListeners(); // Run this once
-                await syncDefaults(); // Run this now
+                
+                // Wire filter listeners (don't apply on change)
+                allFilterGroups.forEach(group => {
+                    const allCb = group.querySelector(".filter-all-cb");
+                    const others = group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)");
+
+                    allCb.addEventListener("change", () => {
+                        const isChecked = allCb.checked;
+                        others.forEach(cb => cb.checked = isChecked);
+                        // NO API CALL HERE
+                    });
+
+                    others.forEach(cb => {
+                        cb.addEventListener("change", () => {
+                            if (!cb.checked) {
+                                allCb.checked = false; // Uncheck (All) if one is unchecked
+                            } else {
+                                const allOthersChecked = Array.from(others).every(c => c.checked);
+                                allCb.checked = allOthersChecked; // Sync (All)
+                            }
+                            // NO API CALL HERE
+                        });
+                    });
+                });
+        
+                // Parameter listeners
+                allParamInputs.forEach(input => {
+                    input.addEventListener("change", () => handleParamChange(input, false)); // false = not init
+                });
+        
+                // --- NEW: Apply Button Listener ---
+                applyButton.addEventListener("click", handleApplyAllFilters);
+                clearAllButton.addEventListener("click", handleClearAll);
+
+                // Run the initial sync
+                await syncDefaults();
             }
         
             // --- Viz readiness ---

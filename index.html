@@ -150,7 +150,7 @@
             margin-right: 8px;
         }
 
-        /* --- NEW: Button Group Styling --- */
+        /* --- Button Group Styling --- */
         .button-group {
             flex-direction: row;
             align-items: flex-end;
@@ -456,7 +456,7 @@
     </div> <div class="viz-wrapper">
         <tableau-viz 
             id="viz1"
-            src="https://prod-in-a.online.tableau.com/t/vikasg-ae2111f8b2/views/MGdahsboardV3/ExecutiveSummary"
+            src="https://prod-in-a.online.tableau.com/t/vikasg-ae2111f8b2/views/MGdahsboardV4/ExecutiveSummary"
             toolbar="hidden" 
             hide-tabs>
         </tableau-viz>
@@ -467,7 +467,7 @@
     <div class="viz-wrapper">
         <tableau-viz 
             id="viz2"
-            src="https://prod-in-a.online.tableau.com/t/vikasg-ae2111f8b2/views/ExecutiveSummary2/Executive2"
+            src="https://prod-in-a.online.tableau.com/t/vikasg-ae2111f8b2/views/MGdahsboardV4/Executive2"
             toolbar="hidden" 
             hide-tabs>
         </tableau-viz>
@@ -488,7 +488,6 @@
             const filterPane = document.getElementById("filter-pane");
             const toggleButton = document.getElementById("toggle-filter-btn");
             const clearAllButton = document.getElementById("clear-all-btn");
-            // --- NEW: Apply Button ---
             const applyButton = document.getElementById("apply-btn");
             const allFilterGroups = document.querySelectorAll(".filter-group");
             const allParamInputs = document.querySelectorAll(".param-change");
@@ -561,10 +560,13 @@
                 }
             }
         
+            // --- This function is called by Apply or Init ---
             async function handleFilterChange(group, isInit = false) {
-                if (!viz1Ready || !viz2Ready) return;
+                if (!viz1Ready) return; // Only need viz1
                 
-                // This function is now only called by Apply button or Init, so no delay needed here.
+                if (!isInit) {
+                     await new Promise(r => setTimeout(r, 500)); // Delay for user clicks
+                }
 
                 const fieldName = group.dataset.fieldName;
                 const allCb = group.querySelector(".filter-all-cb");
@@ -575,60 +577,58 @@
         
                 console.log(`Handling filter change for: ${fieldName}`);
                 try {
-                    // --- CHANGED: New (All) logic ---
                     if (allCb.checked) {
                         const allValues = Array.from(checkboxes).map(cb => cb.value);
                         console.log(`...Applying ALL ${allValues.length} values.`);
                         if(allValues.length > 0) {
-                             await Promise.allSettled([
-                                applyToDashboardWorksheets(vizObj1, fieldName, allValues, "replace"),
-                                applyToDashboardWorksheets(vizObj2, fieldName, allValues, "replace")
-                            ]);
+                             await applyToDashboardWorksheets(vizObj1, fieldName, allValues, "replace");
                         }
                     } else if (selectedValues.length > 0) {
-                        // --- APPLY SPECIFIC FILTERS ---
                         console.log(`...Applying values: ${JSON.stringify(selectedValues)}`);
-                        await Promise.allSettled([
-                            applyToDashboardWorksheets(vizObj1, fieldName, selectedValues, "replace"),
-                            applyToDashboardWorksheets(vizObj2, fieldName, selectedValues, "replace")
-                        ]);
+                        await applyToDashboardWorksheets(vizObj1, fieldName, selectedValues, "replace");
                     } else {
-                        // --- (All) is unchecked and 0 selected, so clear filter ---
                         console.log(`...No values selected. Clearing filter.`);
-                        await Promise.allSettled([
-                            clearDashboardWorksheetsFilter(vizObj1, fieldName),
-                            clearDashboardWorksheetsFilter(vizObj2, fieldName)
-                        ]);
+                        await clearDashboardWorksheetsFilter(vizObj1, fieldName);
                     }
                     console.log(`Filter change complete for ${fieldName}.`);
                 } catch (err) {
                     console.error(`Error applying filter ${fieldName}:`, err);
                 }
             }
-
-            // --- NEW: Apply All Filters Function ---
+            
+            // --- This is the user-clicked "Apply Filters" button ---
             async function handleApplyAllFilters() {
-                if (!viz1Ready || !viz2Ready) return;
-                console.log("Applying all selected filters...");
-                await new Promise(r => setTimeout(r, 500)); // One delay for all
+                if (!viz1Ready) return;
+                console.log("Applying all selected filters and parameters...");
+                await new Promise(r => setTimeout(r, 300)); // Short delay
 
+                // --- 1. Apply Filters ---
                 const filterSyncPromises = [];
                 for (const group of allFilterGroups) {
-                    // Call the existing handleFilterChange function for each group
-                    // Pass 'true' to skip its internal delay
-                    filterSyncPromises.push(handleFilterChange(group, true)); 
+                    filterSyncPromises.push(handleFilterChange(group, true)); // true = isInit/skipDelay
                 }
-                
                 await Promise.allSettled(filterSyncPromises);
                 console.log("All filters applied.");
+
+                // --- 2. Apply Parameters ---
+                const paramPromises = [];
+                allParamInputs.forEach(input => {
+                    paramPromises.push(handleParamChange(input, true)); // true = skipDelay
+                });
+                await Promise.allSettled(paramPromises);
+                console.log("All parameters applied.");
+
+                // --- 3. Close Pane ---
+                filterPane.style.display = 'none';
+                toggleButton.textContent = '☰ Page Filters';
             }
         
-            // --- CHANGED: New "Clear All" logic ---
+            // --- "Clear All" logic ---
             async function handleClearAll() {
-                if (!viz1Ready || !viz2Ready) return;
+                if (!viz1Ready) return;
                 console.log("Resetting all filters & parameters to default...");
 
-                // 1. Revert Viz 1 to its published state. This is fast.
+                // 1. Revert Viz 1 to its published state.
                 try {
                     await vizObj1.revertAllAsync();
                     console.log("Viz 1 reverted to default.");
@@ -643,14 +643,14 @@
                     if (inp.type === "date") inp.value = "";
                 });
                 
-                // 3. Re-run the default sync logic. This will:
-                //    - Read the new (default) state from Viz 1.
-                //    - Update the HTML filter checkboxes.
-                //    - Sync that default state to Viz 2.
-                //    - Sync the reset parameters to both.
-                await syncDefaults();
+                // 3. Re-run the default sync logic.
+                await syncDefaults(true); // true = isReset
                 
                 console.log("All filters and parameters reset.");
+                
+                // 4. Close Pane
+                filterPane.style.display = 'none';
+                toggleButton.textContent = '☰ Page Filters';
             }
         
             // ------------------------------------------------------------------
@@ -658,7 +658,7 @@
             // ------------------------------------------------------------------
         
             async function handleParamChange(input, skipDelay = false) {
-                if (!viz1Ready || !viz2Ready) return;
+                if (!viz1Ready) return;
                 if (!skipDelay) await new Promise(r => setTimeout(r, 300));
         
                 const paramName = input.dataset.paramName;
@@ -694,18 +694,16 @@
                     }
                 }
         
-                await Promise.allSettled([
-                    tryChange(vizObj1, paramName, value), 
-                    tryChange(vizObj2, paramName, value)
-                ]);
+                // --- Simplified to only call Viz 1 ---
+                await tryChange(vizObj1, paramName, value);
             }
         
             // ------------------------------------------------------------------
             // ---------------------- INITIALIZATION ----------------------------
             // ------------------------------------------------------------------
 
-            // --- This function syncs the HTML & Viz 2 to Viz 1's state ---
-            async function syncDefaults() {
+            // --- This function syncs the HTML to Viz 1's state ---
+            async function syncDefaults(isReset = false) {
                 console.log("Syncing defaults, filters, params...");
                 
                 // --- Read default filters from Viz 1 (robustly) ---
@@ -727,9 +725,6 @@
                         }
                     }
                     console.log("Found applied filters:", appliedFilterMap);
-                    
-                    // --- Store this for 'Clear Filters' button ---
-                    defaultFilterState = new Map(appliedFilterMap);
 
                     // Now update the HTML based on the map
                     allFilterGroups.forEach(group => {
@@ -766,37 +761,14 @@
                     });
                 }
                 
-                // --- Sync the newly set HTML defaults to Viz 2 ---
-                console.log("Syncing default filters to Viz 2...");
-                const filterSyncPromises = [];
-                for (const group of allFilterGroups) {
-                    // Read the state we just set in the HTML
-                    const fieldName = group.dataset.fieldName;
-                    const allCb = group.querySelector(".filter-all-cb");
-                    const checkboxes = group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)");
-                    const selectedValues = Array.from(checkboxes)
-                        .filter(cb => cb.checked)
-                        .map(cb => cb.value);
-
-                    if (allCb.checked) {
-                        const allValues = Array.from(checkboxes).map(cb => cb.value);
-                        if(allValues.length > 0){
-                            filterSyncPromises.push(applyToDashboardWorksheets(vizObj2, fieldName, allValues, "replace"));
-                        }
-                    } else if (selectedValues.length > 0) {
-                        filterSyncPromises.push(applyToDashboardWorksheets(vizObj2, fieldName, selectedValues, "replace"));
-                    } else {
-                         filterSyncPromises.push(clearDashboardWorksheetsFilter(vizObj2, fieldName));
-                    }
-                }
-                await Promise.allSettled(filterSyncPromises);
-                console.log("Viz 2 filters synced.");
+                // --- No Viz 2 filter sync needed ---
         
                 // Sync parameter defaults from current HTML state
                 console.log("Syncing default parameters...");
                 const paramPromises = [];
                 allParamInputs.forEach(input => {
-                    if ((input.type === "checkbox" && input.checked) || (input.type === "date" && input.value)) {
+                    // On initial load, sync checked boxes. On reset, sync all.
+                    if (isReset || (input.type === "checkbox" && input.checked) || (input.type === "date" && input.value)) {
                         paramPromises.push(handleParamChange(input, true)); // true = skipDelay
                     }
                 });
@@ -809,7 +781,7 @@
             async function initializeApp() {
                 console.log("Both vizzes ready. Wiring listeners and syncing defaults.");
                 
-                // Wire filter listeners (don't apply on change)
+                // Wire filter listeners (UI only)
                 allFilterGroups.forEach(group => {
                     const allCb = group.querySelector(".filter-all-cb");
                     const others = group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)");
@@ -833,17 +805,14 @@
                     });
                 });
         
-                // Parameter listeners
-                allParamInputs.forEach(input => {
-                    input.addEventListener("change", () => handleParamChange(input, false)); // false = not init
-                });
+                // --- REMOVED Param Listeners ---
         
-                // --- NEW: Apply Button Listener ---
+                // --- Button Listeners ---
                 applyButton.addEventListener("click", handleApplyAllFilters);
                 clearAllButton.addEventListener("click", handleClearAll);
 
                 // Run the initial sync
-                await syncDefaults();
+                await syncDefaults(false); // false = not a reset
             }
         
             // --- Viz readiness ---
@@ -851,12 +820,12 @@
                 console.log("Viz 1 is ready.");
                 vizObj1 = viz1.workbook;
                 viz1Ready = true;
-                if (viz2Ready) await initializeApp();
+                if (viz2Ready) await initializeApp(); 
             });
         
             viz2.addEventListener("firstinteractive", async () => {
                 console.log("Viz 2 is ready.");
-                vizObj2 = viz2.workbook;
+                vizObj2 = viz2.workbook; 
                 viz2Ready = true;
                 if (viz1Ready) await initializeApp();
             });

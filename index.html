@@ -3,831 +3,707 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau Portal</title> 
-
-    <script type='module' src='https://prod-in-a.online.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js'></script>
-
+    <title>Tableau Portal</title>
+    <script type="module" src="https://prod-in-a.online.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js"></script>
     <style>
-        /* Basic page styles */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-
-        /* --- Sticky Header --- */
-        #sticky-header {
-            position: sticky;
-            top: 0;
-            z-index: 1001; /* Higher than dropdown */
-        }
-
-        /* Filter pane styles */
-        .toggle-button {
-            background-color: #FA8072; /* Salmon pink */
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            width: 100%;
-            text-align: left;
-            border-radius: 0; 
-        }
-
-        .toggle-button:hover {
-            background-color: #CD5C5C; /* Darker red */
-        }
-        
-        .filter-pane {
-            background-color: #ffffff;
-            padding: 20px;
-            border-bottom: 2px solid #ddd;
-            display: none; /* Starts closed by default */
-        }
-
-        .controls-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            min-width: 200px;
-        }
-        
-        /* Grouping for Parameters */
-        .param-group-container {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            padding: 15px;
-            border: 1px solid #eee;
-            border-radius: 4px;
-            flex-basis: 100%; 
-        }
-
-        .param-sub-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: flex-end;
-        }
-        
-        .control-group label {
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 0.9em;
-            color: #555;
-        }
-
-        /* --- Checkbox Dropdown Styles --- */
-        .dropdown {
-            position: relative;
-        }
-        
-        .dropdown-button {
-            padding: 8px 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background-color: white;
-            cursor: pointer;
-            width: 100%;
-            text-align: left;
-            box-sizing: border-box; 
-        }
-        
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: white;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            z-index: 1000;
-            width: 250px;
-            max-height: 200px;
-            overflow-y: auto;
-            padding: 5px;
-        }
-        
-        .dropdown-content label {
-            display: block;
-            padding: 5px 10px;
-            font-weight: normal;
-            font-size: 0.9em;
-            cursor: pointer;
-        }
-        
-        .dropdown-content label:hover {
-            background-color: #f0f0f0;
-        }
-        
-        .dropdown-content label input {
-            margin-right: 8px;
-        }
-        /* ------------------------------------- */
-
-        .control-group input[type="date"] {
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            font-size: 1em;
-            box-sizing: border-box; 
-        }
-
-        .control-group.checkbox-group label {
-            display: flex;
-            align-items: center;
-            font-weight: normal;
-        }
-        
-        .control-group.checkbox-group input {
-            margin-right: 8px;
-        }
-
-        /* --- Button Group Styling --- */
-        .button-group {
-            flex-direction: row;
-            align-items: flex-end;
-        }
-
-        .apply-button {
-            padding: 8px 15px;
-            background-color: transparent;
-            color: #007ab8; /* Blue */
-            border: 1px solid #007ab8;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-        .apply-button:hover {
-            background-color: #f0f8ff; /* Light blue hover */
-        }
-
-        .clear-button {
-            padding: 8px 15px;
-            background-color: #d9534f;
-            color: white;
-            border: 1px solid #d9534f;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        
-        .clear-button:hover {
-            background-color: #c9302c;
-        }
-
-        /* --- Sizing Container --- */
-        .viz-wrapper {
-            width: 100%;
-            height: 800px; /* Set fixed height on the WRAPPER */
-            box-sizing: border-box;
-        }
-
-        tableau-viz {
-            display: block; 
-            width: 100%;
-            height: 100%; /* Tell viz to fill its wrapper */
-            box-sizing: border-box;
-        }
-        
-        .viz-separator {
-            border: none;
-            height: 0.5cm;
-            background-color: #000; /* Black */
-            margin: 20px 0; /* Add vertical space */
-        }
+        body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; background: #f8f9fa; color: #333; }
+        #sticky-header { position: sticky; top: 0; z-index: 1001; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .toggle-button { background: #2c3e50; color: #fff; border: 0; padding: 14px 20px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; text-align: left; display: flex; align-items: center; transition: background 0.3s; }
+        .toggle-button:hover { background: #34495e; }
+        .filter-pane { background: #fff; display: none; border-bottom: 1px solid #eaeaea; max-height: 85vh; overflow-y: auto; }
+        .pane-content { padding: 20px; max-width: 1400px; margin: 0 auto; }
+        .section-title { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 10px; font-weight: 700; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .controls-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .control-group { display: flex; flex-direction: column; }
+        .control-group label { font-size: 13px; margin-bottom: 6px; font-weight: 600; color: #444; }
+        .dropdown { position: relative; }
+        .dropdown-button { padding: 10px 12px; border: 1px solid #dcdcdc; border-radius: 6px; background: #fff; cursor: pointer; text-align: left; width: 100%; font-size: 14px; color: #555; transition: all 0.2s; }
+        .dropdown-button:hover { border-color: #bbb; background: #fcfcfc; }
+        .dropdown-button:after { content: '▼'; font-size: 10px; float: right; color: #999; margin-top: 3px; }
+        .dropdown-content { display: none; position: absolute; top: 105%; left: 0; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 1000; width: 100%; min-width: 280px; max-height: 300px; overflow-y: auto; }
+        .select-all { padding: 8px 12px; border-bottom: 1px solid #f0f0f0; background: #fafafa; font-weight: 600; display: block; cursor: pointer; font-size: 14px; }
+        .options-list label { display: block; padding: 8px 12px; font-size: 14px; cursor: pointer; border-bottom: 1px solid #fafafa; font-weight: 400; margin-bottom: 0; }
+        .options-list label:hover { background: #f0f7ff; color: #007ab8; }
+        .param-group-container { display: flex; flex-direction: column; gap: 10px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fafafa; grid-column: span 2; }
+        .control-group.checkbox-group { flex-direction: row; align-items: center; gap: 8px; }
+        .control-group.checkbox-group input { width: 16px; height: 16px; cursor: pointer; }
+        .control-group.checkbox-group label { margin-bottom: 0; font-size: 14px; cursor: pointer;}
+        .param-sub-group { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 5px; }
+        .date-input-group { display: flex; flex-direction: column; }
+        .date-input-group label { font-size: 12px; color: #666; margin-bottom: 2px; }
+        .date-input-group input { padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; font-size: 13px; }
+        .action-bar { display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
+        .btn { padding: 10px 24px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; border: none; }
+        .btn-apply { background: #007ab8; color: #fff; box-shadow: 0 2px 4px rgba(0,122,184,0.3); }
+        .btn-apply:hover { background: #006293; box-shadow: 0 4px 8px rgba(0,122,184,0.4); }
+        .btn-clear { background: #fff; color: #d9534f; border: 1px solid #d9534f; }
+        .btn-clear:hover { background: #fff5f5; }
+        .viz-wrapper { width: 100%; height: 800px; margin-bottom: 20px; }
+        tableau-viz { display: block; width: 100%; height: 100%; }
+        .viz-separator { border: none; height: 0.5cm; background: #000; margin: 40px 0; display: block; width: 100%; }
+        @media (max-width: 768px) { .controls-grid { grid-template-columns: 1fr; } .param-group-container { grid-column: span 1; } }
     </style>
 </head>
 <body>
 
     <div id="sticky-header">
         <button id="toggle-filter-btn" class="toggle-button">☰ Page Filters</button>
-        
         <div id="filter-pane" class="filter-pane">
-            <div class="controls-container">
-                <div class="control-group">
-                    <label>Branch</label>
-                    <div class="dropdown filter-group" data-field-name="Clean Branch Name">
-                        <button class="dropdown-button">Select Branch(es)</button>
-                        <div class="dropdown-content">
-                            <label><input type="checkbox" value="All" class="filter-all-cb" /> (All)</label>
-                            <label><input type="checkbox" value="AUNDH RETAIL STORE" /> AUNDH RETAIL STORE</label>
-                            <label><input type="checkbox" value="FOOD COUNTER GUREGHAR" /> FOOD COUNTER GUREGHAR</label>
-                            <label><input type="checkbox" value="FOOD COUNTER LONAVALA" /> FOOD COUNTER LONAVALA</label>
-                            <label><input type="checkbox" value="FOOD COUNTER SHENDURJANE" /> FOOD COUNTER SHENDURJANE</label>
-                            <label><input type="checkbox" value="MAPRO FACTORY TOUR & ADVENTURE PARK" /> MAPRO FACTORY TOUR & ADVENTURE PARK</label>
-                            <label><input type="checkbox" value="MAPRO MANISHA GARDEN GUREGHAR" /> MAPRO MANISHA GARDEN GUREGHAR</label>
-                            <label><input type="checkbox" value="ONLINE SALES WAREHOUSE" /> ONLINE SALES WAREHOUSE</label>
-                            <label><input type="checkbox" value="PST, HIGHWAY AND MAHABALESHWAR MARKET" /> PST, HIGHWAY AND MAHABALESHWAR MARKET</label>
-                            <label><input type="checkbox" value="Retail Drive Inn" /> Retail Drive Inn</label>
-                            <label><input type="checkbox" value="Retail Gureghar" /> Retail Gureghar</label>
-                            <label><input type="checkbox" value="Retail Gureghar WH" /> Retail Gureghar WH</label>
-                            <label><input type="checkbox" value="Retail Lonavala" /> Retail Lonavala</label>
-                            <label><input type="checkbox" value="Retail Online" /> Retail Online</label>
-                            <label><input type="checkbox" value="Retail Shendurjane" /> Retail Shendurjane</label>
-                            <label><input type="checkbox" value="TBT STORE GUREGHAR" /> TBT STORE GUREGHAR</label>
-                            <label><input type="checkbox" value="TBT STORE VALVAN LONAVALA" /> TBT STORE VALVAN LONAVALA</label>
+            <div class="pane-content">
+                <div class="section-title">Data Filters</div>
+                <div class="controls-grid">
+                    <!-- Branch -->
+                    <div class="control-group">
+                        <label>Branch</label>
+                        <div class="dropdown filter-group" data-field-name="Clean Branch Name">
+                            <button class="dropdown-button">Select Branch(es)</button>
+                            <div class="dropdown-content">
+                                <label class="select-all"><input type="checkbox" value="All" class="filter-all-cb"> (Select All)</label>
+                                <div class="options-list">
+                                    <label><input type="checkbox" value="FOOD COUNTER GUREGHAR" />FOOD COUNTER GUREGHAR</label>
+                                    <label><input type="checkbox" value="FOOD COUNTER LONAVALA" />FOOD COUNTER LONAVALA</label>
+                                    <label><input type="checkbox" value="FOOD COUNTER SHENDURJANE" />FOOD COUNTER SHENDURJANE</label>
+                                    <label><input type="checkbox" value="MAPRO FACTORY TOUR & ADVENTURE PARK" />MAPRO FACTORY TOUR & ADVENTURE PARK</label>
+                                    <label><input type="checkbox" value="MAPRO MANISHA GARDEN GUREGHAR" />MAPRO MANISHA GARDEN GUREGHAR</label>
+                                    <label><input type="checkbox" value="PST, HIGHWAY AND MAHABALESHWAR MARKET" />PST, HIGHWAY AND MAHABALESHWAR MARKET</label>
+                                    <label><input type="checkbox" value="Retail Drive Inn" />Retail Drive Inn</label>
+                                    <label><input type="checkbox" value="Retail Gureghar" />Retail Gureghar</label>
+                                    <label><input type="checkbox" value="Retail Gureghar WH" />Retail Gureghar WH</label>
+                                    <label><input type="checkbox" value="Retail Lonavala" />Retail Lonavala</label>
+                                    <label><input type="checkbox" value="Retail Online" />Retail Online</label>
+                                    <label><input type="checkbox" value="Retail Shendurjane" />Retail Shendurjane</label>
+                                    <label><input type="checkbox" value="TBT STORE GUREGHAR" />TBT STORE GUREGHAR</label>
+                                    <label><input type="checkbox" value="TBT STORE VALVAN LONAVALA" />TBT STORE VALVAN LONAVALA</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="control-group">
+                        <label>Category</label>
+                        <div class="dropdown filter-group" data-field-name="Category">
+                            <button class="dropdown-button">Select Category(s)</button>
+                            <div class="dropdown-content">
+                                <label class="select-all"><input type="checkbox" value="All" class="filter-all-cb"> (Select All)</label>
+                                <div class="options-list">
+                                    <label><input type="checkbox" value="CHOCOLATE" />CHOCOLATE</label>
+                                    <label><input type="checkbox" value="FALERO AND FRUIT CHEWS" />FALERO AND FRUIT CHEWS</label>
+                                    <label><input type="checkbox" value="FOOD COUNTER" />FOOD COUNTER</label>
+                                    <label><input type="checkbox" value="FRUIT FILLINGS" />FRUIT FILLINGS</label>
+                                    <label><input type="checkbox" value="HAMPERS" />HAMPERS</label>
+                                    <label><input type="checkbox" value="JAMS AND SPREADS" />JAMS AND SPREADS</label>
+                                    <label><input type="checkbox" value="KHAKHRA" />KHAKHRA</label>
+                                    <label><input type="checkbox" value="LOUNGE" />LOUNGE</label>
+                                    <label><input type="checkbox" value="OTHER" />OTHER</label>
+                                    <label><input type="checkbox" value="PACKAGING MATERIAL" />PACKAGING MATERIAL</label>
+                                    <label><input type="checkbox" value="PERSONAL CARE" />PERSONAL CARE</label>
+                                    <label><input type="checkbox" value="PRA SHARBATS AND SYRUPS" />PRA SHARBATS AND SYRUPS</label>
+                                    <label><input type="checkbox" value="SCS" />SCS</label>
+                                    <label><input type="checkbox" value="SNACKERY" />SNACKERY</label>
+                                    <label><input type="checkbox" value="TRADING" />TRADING</label>
+                                    <label><input type="checkbox" value="Unmapped" />Unmapped</label>
+                                    <label><input type="checkbox" value="ZERO SUGAR" />ZERO SUGAR</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subcategory -->
+                    <div class="control-group">
+                        <label>Subcategory</label>
+                        <div class="dropdown filter-group" data-field-name="Subcategory">
+                            <button class="dropdown-button">Select Subcategory(s)</button>
+                            <div class="dropdown-content">
+                                <label class="select-all"><input type="checkbox" value="All" class="filter-all-cb"> (Select All)</label>
+                                <div class="options-list">
+                                    <label><input type="checkbox" value="ADVENTURE PARK" />ADVENTURE PARK</label>
+                                    <label><input type="checkbox" value="BANANA CHIPS" />BANANA CHIPS</label>
+                                    <label><input type="checkbox" value="CHOCO SPREAD" />CHOCO SPREAD</label>
+                                    <label><input type="checkbox" value="CHOCOLATE" />CHOCOLATE</label>
+                                    <label><input type="checkbox" value="CHOCOLATE BARS" />CHOCOLATE BARS</label>
+                                    <label><input type="checkbox" value="CHOCOLATE COATED NUTS" />CHOCOLATE COATED NUTS</label>
+                                    <label><input type="checkbox" value="CHOCOLATE COMBI PACK" />CHOCOLATE COMBI PACK</label>
+                                    <label><input type="checkbox" value="CHOCOLATE DRAGEE" />CHOCOLATE DRAGEE</label>
+                                    <label><input type="checkbox" value="CHOCOLATE GIFT PACK" />CHOCOLATE GIFT PACK</label>
+                                    <label><input type="checkbox" value="CHOCOLATE NUTS" />CHOCOLATE NUTS</label>
+                                    <label><input type="checkbox" value="CHOCOLATE STANDEE POUCH" />CHOCOLATE STANDEE POUCH</label>
+                                    <label><input type="checkbox" value="COFFEE FLAVOUR" />COFFEE FLAVOUR</label>
+                                    <label><input type="checkbox" value="COOKIES" />COOKIES</label>
+                                    <label><input type="checkbox" value="COOKIES HAMPER" />COOKIES HAMPER</label>
+                                    <label><input type="checkbox" value="COSMETICS" />COSMETICS</label>
+                                    <label><input type="checkbox" value="Cotton Bag" />Cotton Bag</label>
+                                    <label><input type="checkbox" value="CRUSHES" />CRUSHES</label>
+                                    <label><input type="checkbox" value="CRUSHES COMBI PACK" />CRUSHES COMBI PACK</label>
+                                    <label><input type="checkbox" value="CUBES" />CUBES</label>
+                                    <label><input type="checkbox" value="CUBES HAMPER" />CUBES HAMPER</label>
+                                    <label><input type="checkbox" value="DESSERT" />DESSERT</label>
+                                    <label><input type="checkbox" value="DIWALI HAMPER" />DIWALI HAMPER</label>
+                                    <label><input type="checkbox" value="DRINKS" />DRINKS</label>
+                                    <label><input type="checkbox" value="DRIVER DHABA" />DRIVER DHABA</label>
+                                    <label><input type="checkbox" value="FACTORY TOUR" />FACTORY TOUR</label>
+                                    <label><input type="checkbox" value="FALCHOOS" />FALCHOOS</label>
+                                    <label><input type="checkbox" value="FALCHOOS HAMPER" />FALCHOOS HAMPER</label>
+                                    <label><input type="checkbox" value="FALERO" />FALERO</label>
+                                    <label><input type="checkbox" value="FALERO COMBI PACK" />FALERO COMBI PACK</label>
+                                    <label><input type="checkbox" value="FALERO HAMPER" />FALERO HAMPER</label>
+                                    <label><input type="checkbox" value="FALERO RAIN FALL" />FALERO RAIN FALL</label>
+                                    <label><input type="checkbox" value="FALERO SPARKY" />FALERO SPARKY</label>
+                                    <label><input type="checkbox" value="FLAG CAPS" />FLAG CAPS</label>
+                                    <label><input type="checkbox" value="FRENCH FRY" />FRENCH FRY</label>
+                                    <label><input type="checkbox" value="FRUBA" />FRUBA</label>
+                                    <label><input type="checkbox" value="FRUBBLE" />FRUBBLE</label>
+                                    <label><input type="checkbox" value="FRUBBLE FRUIT SNACK" />FRUBBLE FRUIT SNACK</label>
+                                    <label><input type="checkbox" value="FRUDIP" />FRUDIP</label>
+                                    <label><input type="checkbox" value="FRUIT AND VEGITABLE" />FRUIT AND VEGITABLE</label>
+                                    <label><input type="checkbox" value="FRUIT FILLINGS" />FRUIT FILLINGS</label>
+                                    <label><input type="checkbox" value="FRUITY SWEETS AND OTHERS" />FRUITY SWEETS AND OTHERS</label>
+                                    <label><input type="checkbox" value="GHEE" />GHEE</label>
+                                    <label><input type="checkbox" value="GIFT ITEMS" />GIFT ITEMS</label>
+                                    <label><input type="checkbox" value="GOAT HAMPER" />GOAT HAMPER</label>
+                                    <label><input type="checkbox" value="GREETINGS HAMPER" />GREETINGS HAMPER</label>
+                                    <label><input type="checkbox" value="GULKAND" />GULKAND</label>
+                                    <label><input type="checkbox" value="HONEY" />HONEY</label>
+                                    <label><input type="checkbox" value="ICE CREAM" />ICE CREAM</label>
+                                    <label><input type="checkbox" value="J-POP" />J-POP</label>
+                                    <label><input type="checkbox" value="JAM" />JAM</label>
+                                    <label><input type="checkbox" value="JAM AND KETCHUP COMBI" />JAM AND KETCHUP COMBI</label>
+                                    <label><input type="checkbox" value="KETCHUP" />KETCHUP</label>
+                                    <label><input type="checkbox" value="KHAKHRA" />KHAKHRA</label>
+                                    <label><input type="checkbox" value="LOUNGE" />LOUNGE</label>
+                                    <label><input type="checkbox" value="MAPRO HAMPER" />MAPRO HAMPER</label>
+                                    <label><input type="checkbox" value="MIXOLOGY KIT" />MIXOLOGY KIT</label>
+                                    <label><input type="checkbox" value="NACHOS" />NACHOS</label>
+                                    <label><input type="checkbox" value="OTHER" />OTHER</label>
+                                    <label><input type="checkbox" value="OTHER TRADING" />OTHER TRADING</label>
+                                    <label><input type="checkbox" value="PAANDE" />PAANDE</label>
+                                    <label><input type="checkbox" value="PACKAGING MATERIAL" />PACKAGING MATERIAL</label>
+                                    <label><input type="checkbox" value="PACKING BAG" />PACKING BAG</label>
+                                    <label><input type="checkbox" value="PEANUT BUTTER" />PEANUT BUTTER</label>
+                                    <label><input type="checkbox" value="PIZZA" />PIZZA</label>
+                                    <label><input type="checkbox" value="PIZZA SAUCE" />PIZZA SAUCE</label>
+                                    <label><input type="checkbox" value="PLANTS SALES" />PLANTS SALES</label>
+                                    <label><input type="checkbox" value="PONCHO" />PONCHO</label>
+                                    <label><input type="checkbox" value="PRA PRESERVE" />PRA PRESERVE</label>
+                                    <label><input type="checkbox" value="PRA SHARBATS" />PRA SHARBATS</label>
+                                    <label><input type="checkbox" value="PRA SYRUPS" />PRA SYRUPS</label>
+                                    <label><input type="checkbox" value="PRALINES" />PRALINES</label>
+                                    <label><input type="checkbox" value="RAKSHABANDHAN HAMPER" />RAKSHABANDHAN HAMPER</label>
+                                    <label><input type="checkbox" value="RTD" />RTD</label>
+                                    <label><input type="checkbox" value="RTD COMBI" />RTD COMBI</label>
+                                    <label><input type="checkbox" value="SANDWICH & SOUP" />SANDWICH & SOUP</label>
+                                    <label><input type="checkbox" value="SHAMPOO" />SHAMPOO</label>
+                                    <label><input type="checkbox" value="SHIPING CHARGES" />SHIPING CHARGES</label>
+                                    <label><input type="checkbox" value="SKIN CARE" />SKIN CARE</label>
+                                    <label><input type="checkbox" value="SOAP" />SOAP</label>
+                                    <label><input type="checkbox" value="SPA" />SPA</label>
+                                    <label><input type="checkbox" value="SPARKY COMBO" />SPARKY COMBO</label>
+                                    <label><input type="checkbox" value="SPICE DROPS" />SPICE DROPS</label>
+                                    <label><input type="checkbox" value="SQUASH COMBI" />SQUASH COMBI</label>
+                                    <label><input type="checkbox" value="SQUASHES" />SQUASHES</label>
+                                    <label><input type="checkbox" value="SYRUPS" />SYRUPS</label>
+                                    <label><input type="checkbox" value="SYRUPS COMBI" />SYRUPS COMBI</label>
+                                    <label><input type="checkbox" value="SYRUPS HAMPER" />SYRUPS HAMPER</label>
+                                    <label><input type="checkbox" value="TOPPINGS" />TOPPINGS</label>
+                                    <label><input type="checkbox" value="TRADING" />TRADING</label>
+                                    <label><input type="checkbox" value="UMBRELLA" />UMBRELLA</label>
+                                    <label><input type="checkbox" value="Unmapped" />Unmapped</label>
+                                    <label><input type="checkbox" value="WATER BOTTLE" />WATER BOTTLE</label>
+                                    <label><input type="checkbox" value="White Mug" />White Mug</label>
+                                    <label><input type="checkbox" value="WIRE BAG" />WIRE BAG</label>
+                                    <label><input type="checkbox" value="ZERO ADDED CHOCOLATE" />ZERO ADDED CHOCOLATE</label>
+                                    <label><input type="checkbox" value="ZERO ADDED PRESERVE" />ZERO ADDED PRESERVE</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Brand -->
+                    <div class="control-group">
+                        <label>Brand</label>
+                        <div class="dropdown filter-group" data-field-name="brand">
+                            <button class="dropdown-button">Select Brand(s)</button>
+                            <div class="dropdown-content">
+                                <label class="select-all"><input type="checkbox" value="All" class="filter-all-cb"> (Select All)</label>
+                                <div class="options-list">
+                                    <label><input type="checkbox" value="FALERO" />FALERO</label>
+                                    <label><input type="checkbox" value="FOOD COUNTER" />FOOD COUNTER</label>
+                                    <label><input type="checkbox" value="LOUNGE" />LOUNGE</label>
+                                    <label><input type="checkbox" value="MAPRO" />MAPRO</label>
+                                    <label><input type="checkbox" value="MAZAANA" />MAZAANA</label>
+                                    <label><input type="checkbox" value="NA" />NA</label>
+                                    <label><input type="checkbox" value="OTHER" />OTHER</label>
+                                    <label><input type="checkbox" value="PRA" />PRA</label>
+                                    <label><input type="checkbox" value="SNACKERY" />SNACKERY</label>
+                                    <label><input type="checkbox" value="TBT" />TBT</label>
+                                    <label><input type="checkbox" value="TRADING GOODS" />TRADING GOODS</label>
+                                    <label><input type="checkbox" value="Unmapped" />Unmapped</label>
+                                    <label><input type="checkbox" value="WHITTY" />WHITTY</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="control-group">
-                    <label>Category</label>
-                    <div class="dropdown filter-group" data-field-name="Category">
-                        <button class="dropdown-button">Select Category(s)</button>
-                        <div class="dropdown-content">
-                            <label><input type="checkbox" value="All" class="filter-all-cb" /> (All)</label>
-                            <label><input type="checkbox" value="CAFERO" /> CAFERO</label>
-                            <label><input type="checkbox" value="CHOCOLATE" /> CHOCOLATE</label>
-                            <label><input type="checkbox" value="FALERO AND FRUIT CHEWS" /> FALERO AND FRUIT CHEWS</label>
-                            <label><input type="checkbox" value="FOOD COUNTER" /> FOOD COUNTER</label>
-                            <label><input type="checkbox" value="FRUIT FILLINGS" /> FRUIT FILLINGS</label>
-                            <label><input type="checkbox" value="HAMPERS" /> HAMPERS</label>
-                            <label><input type="checkbox" value="JAMS AND SPREADS" /> JAMS AND SPREADS</label>
-                            <label><input type="checkbox" value="KHAKHRA" /> KHAKHRA</label>
-                            <label><input type="checkbox" value="LOUNGE" /> LOUNGE</label>
-                            <label><input type="checkbox" value="OTHER" /> OTHER</label>
-                            <label><input type="checkbox" value="PACKAGING MATERIAL" /> PACKAGING MATERIAL</label>
-                            <label><input type="checkbox" value="PERSONAL CARE" /> PERSONAL CARE</label>
-                            <label><input type="checkbox" value="PRA SHARBATS AND SYRUPS" /> PRA SHARBATS AND SYRUPS</label>
-                            <label><input type="checkbox" value="SCS" /> SCS</label>
-                            <label><input type="checkbox" value="SNACKERY" /> SNACKERY</label>
-                            <label><input type="checkbox" value="TRADING" /> TRADING</label>
-                            <label><input type="checkbox" value="ZERO SUGAR" /> ZERO SUGAR</label>
+                <div class="section-title" style="margin-top: 15px;">Date Controls</div>
+                <div class="controls-grid">
+                    <div class="param-group-container">
+                        <div class="control-group checkbox-group">
+                            <input type="checkbox" class="param-change" id="use-custom-range" data-param-name="Use Custom Range?">
+                            <label for="use-custom-range">Use Custom Date Range</label>
+                        </div>
+                        <div class="param-sub-group">
+                            <div class="date-input-group">
+                                <label>TY Start</label>
+                                <input type="date" class="param-change" data-param-name="Custom Range Start">
+                            </div>
+                            <div class="date-input-group">
+                                <label>TY End</label>
+                                <input type="date" class="param-change" data-param-name="Custom Range End">
+                            </div>
+                            <div class="date-input-group">
+                                <label>LY Start</label>
+                                <input type="date" class="param-change" data-param-name="Custom Comparison Start">
+                            </div>
+                            <div class="date-input-group">
+                                <label>LY End</label>
+                                <input type="date" class="param-change" data-param-name="Custom Comparison End">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="param-group-container">
+                        <div class="control-group checkbox-group">
+                            <input type="checkbox" class="param-change" id="use-manual-date" data-param-name="Use Manual Date?">
+                            <label for="use-manual-date">Use Manual Analysis Start</label>
+                        </div>
+                        <div class="param-sub-group">
+                            <div class="date-input-group">
+                                <label>Analysis Start</label>
+                                <input type="date" class="param-change" data-param-name="Manual Analysis Date">
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="control-group">
-                    <label>Subcategory</label>
-                    <div class="dropdown filter-group" data-field-name="Subcategory">
-                        <button class="dropdown-button">Select Subcategory(s)</button>
-                        <div class="dropdown-content">
-                            <label><input type="checkbox" value="All" class="filter-all-cb" /> (All)</label>
-                            <label><input type="checkbox" value="ADVENTURE PARK" /> ADVENTURE PARK</label>
-                            <label><input type="checkbox" value="BANANA CHIPS" /> BANANA CHIPS</label>
-                            <label><input type="checkbox" value="CAFREO" /> CAFREO</label>
-                            <label><input type="checkbox" value="CHOCO SPREAD" /> CHOCO SPREAD</label>
-                            <label><input type="checkbox" value="CHOCOLATE" /> CHOCOLATE</label>
-                            <label><input type="checkbox" value="CHOCOLATE BARS" /> CHOCOLATE BARS</label>
-                            <label><input type="checkbox" value="CHOCOLATE COATED NUTS" /> CHOCOLATE COATED NUTS</label>
-                            <label><input type="checkbox" value="CHOCOLATE COMBI PACK" /> CHOCOLATE COMBI PACK</label>
-                            <label><input type="checkbox" value="CHOCOLATE DRAGEE" /> CHOCOLATE DRAGEE</label>
-                            <label><input type="checkbox" value="CHOCOLATE GIFT PACK" /> CHOCOLATE GIFT PACK</label>
-                            <label><input type="checkbox" value="CHOCOLATE NUTS" /> CHOCOLATE NUTS</label>
-                            <label><input type="checkbox" value="CHOCOLATE STANDEE POUCH" /> CHOCOLATE STANDEE POUCH</label>
-                            <label><input type="checkbox" value="CHOCOLERO" /> CHOCOLERO</label>
-                            <label><input type="checkbox" value="COFFEE FLAVOUR" /> COFFEE FLAVOUR</label>
-                            <label><input type="checkbox" value="COOKIES" /> COOKIES</label>
-                            <label><input type="checkbox" value="COOKIES HAMPER" /> COOKIES HAMPER</label>
-                            <label><input type="checkbox" value="COOLIO 500G" /> COOLIO 500G</label>
-                            <label><input type="checkbox" value="COSMETICS" /> COSMETICS</label>
-                            <label><input type="checkbox" value="Cotton Bag" /> Cotton Bag</label>
-                            <label><input type="checkbox" value="CRUSHES" /> CRUSHES</label>
-                            <label><input type="checkbox" value="CRUSHES COMBI PACK" /> CRUSHES COMBI PACK</label>
-                            <label><input type="checkbox" value="CUBES" /> CUBES</label>
-                            <label><input type="checkbox" value="CUBES HAMPER" /> CUBES HAMPER</label>
-                            <label><input type="checkbox" value="DESSERT" /> DESSERT</label>
-                            <label><input type="checkbox" value="DIWALI HAMPER" /> DIWALI HAMPER</label>
-                            <label><input type="checkbox" value="DRINKS" /> DRINKS</label>
-                            <label><input type="checkbox" value="DRIVER DHABA" /> DRIVER DHABA</label>
-                            <label><input type="checkbox" value="FACTORY TOUR" /> FACTORY TOUR</label>
-                            <label><input type="checkbox" value="FALCHOOS" /> FALCHOOS</label>
-                            <label><input type="checkbox" value="FALCHOOS HAMPER" /> FALCHOOS HAMPER</label>
-                            <label><input type="checkbox" value="FALERO" /> FALERO</label>
-                            <label><input type="checkbox" value="FALERO COMBI PACK" /> FALERO COMBI PACK</label>
-                            <label><input type="checkbox" value="FALERO DRINK COMBI" /> FALERO DRINK COMBI</label>
-                            <label><input type="checkbox" value="FALERO HAMPER" /> FALERO HAMPER</label>
-                            <label><input type="checkbox" value="FALERO RAIN FALL" /> FALERO RAIN FALL</label>
-                            <label><input type="checkbox" value="FALERO SPARKY" /> FALERO SPARKY</label>
-                            <label><input type="checkbox" value="FLAG CAPS" /> FLAG CAPS</label>
-                            <label><input type="checkbox" value="FRENCH FRY" /> FRENCH FRY</label>
-                            <label><input type="checkbox" value="FRUBA" /> FRUBA</label>
-                            <label><input type="checkbox" value="FRUBBLE" /> FRUBBLE</label>
-                            <label><input type="checkbox" value="FRUBBLE COMBI PACK" /> FRUBBLE COMBI PACK</label>
-                            <label><input type="checkbox" value="FRUBBLE FRUIT SNACK" /> FRUBBLE FRUIT SNACK</label>
-                            <label><input type="checkbox" value="FRUDIP" /> FRUDIP</label>
-                            <label><input type="checkbox" value="FRUIT AND VEGITABLE" /> FRUIT AND VEGITABLE</label>
-                            <label><input type="checkbox" value="FRUIT FILLINGS" /> FRUIT FILLINGS</label>
-                            <label><input type="checkbox" value="FRUITY SWEETS AND OTHERS" /> FRUITY SWEETS AND OTHERS</label>
-                            <label><input type="checkbox" value="FRUITY SWEETS HAMPER" /> FRUITY SWEETS HAMPER</label>
-                            <label><input type="checkbox" value="GHEE" /> GHEE</label>
-                            <label><input type="checkbox" value="GIFT HAMPER" /> GIFT HAMPER</label>
-                            <label><input type="checkbox" value="GIFT ITEMS" /> GIFT ITEMS</label>
-                            <label><input type="checkbox" value="GOAT HAMPER" /> GOAT HAMPER</label>
-                            <label><input type="checkbox" value="GOLIO SPARK" /> GOLIO SPARK</label>
-                            <label><input type="checkbox" value="GREETINGS HAMPER" /> GREETINGS HAMPER</label>
-                            <label><input type="checkbox" value="GULKAND" /> GULKAND</label>
-                            <label><input type="checkbox" value="HONEY" /> HONEY</label>
-                            <label><input type="checkbox" value="ICE CREAM" /> ICE CREAM</label>
-                            <label><input type="checkbox" value="JAGGERY" /> JAGGERY</label>
-                            <label><input type="checkbox" value="JAM" /> JAM</label>
-                            <label><input type="checkbox" value="JAM AND KETCHUP COMBI" /> JAM AND KETCHUP COMBI</label>
-                            <label><input type="checkbox" value="J-POP" /> J-POP</label>
-                            <label><input type="checkbox" value="KETCHUP" /> KETCHUP</label>
-                            <label><input type="checkbox" value="KHAKHRA" /> KHAKHRA</label>
-                            <label><input type="checkbox" value="LOUNGE" /> LOUNGE</label>
-                            <label><input type="checkbox" value="MAPRO HAMPER" /> MAPRO HAMPER</label>
-                            <label><input type="checkbox" value="MAZAANA HAMPER" /> MAZAANA HAMPER</label>
-                            <label><input type="checkbox" value="MIX HAMPER" /> MIX HAMPER</label>
-                            <label><input type="checkbox" value="MIXOLOGY KIT" /> MIXOLOGY KIT</label>
-                            <label><input type="checkbox" value="NACHOS" /> NACHOS</label>
-                            <label><input type="checkbox" value="OTHER" /> OTHER</label>
-                            <label><input type="checkbox" value="OTHER TRADING" /> OTHER TRADING</label>
-                            <label><input type="checkbox" value="PAANDE" /> PAANDE</label>
-                            <label><input type="checkbox" value="PACKAGING MATERIAL" /> PACKAGING MATERIAL</label>
-                            <label><input type="checkbox" value="PACKING BAG" /> PACKING BAG</label>
-                            <label><input type="checkbox" value="PEANUT BUTTER" /> PEANUT BUTTER</label>
-                            <label><input type="checkbox" value="PIZZA" /> PIZZA</label>
-                            <label><input type="checkbox" value="PIZZA SAUCE" /> PIZZA SAUCE</label>
-                            <label><input type="checkbox" value="PLANTS SALES" /> PLANTS SALES</label>
-                            <label><input type="checkbox" value="PONCHO" /> PONCHO</label>
-                            <label><input type="checkbox" value="PRA PRESERVE" /> PRA PRESERVE</label>
-                            <label><input type="checkbox" value="PRA SHARBATS" /> PRA SHARBATS</label>
-                            <label><input type="checkbox" value="PRA SYRUPS" /> PRA SYRUPS</label>
-                            <label><input type="checkbox" value="PRALINES" /> PRALINES</label>
-                            <label><input type="checkbox" value="RAKSHABANDHAN HAMPER" /> RAKSHABANDHAN HAMPER</label>
-                            <label><input type="checkbox" value="RTD" /> RTD</label>
-                            <label><input type="checkbox" value="RTD COMBI" /> RTD COMBI</label>
-                            <label><input type="checkbox" value="SANDWICH & SOUP" /> SANDWICH & SOUP</label>
-                            <label><input type="checkbox" value="SHAMPOO" /> SHAMPOO</label>
-                            <label><input type="checkbox" value="SHIPING CHARGES" /> SHIPING CHARGES</label>
-                            <label><input type="checkbox" value="SKIN CARE" /> SKIN CARE</label>
-                            <label><input type="checkbox" value="SOAP" /> SOAP</label>
-                            <label><input type="checkbox" value="SPA" /> SPA</label>
-                            <label><input type="checkbox" value="SPARKY COMBO" /> SPARKY COMBO</label>
-                            <label><input type="checkbox" value="SPICE DROPS" /> SPICE DROPS</label>
-                            <label><input type="checkbox" value="SQUASH COMBI" /> SQUASH COMBI</label>
-                            <label><input type="checkbox" value="SQUASHES" /> SQUASHES</label>
-                            <label><input type="checkbox" value="SUGAR" /> SUGAR</label>
-                            <label><input type="checkbox" value="Syrups" /> Syrups</label>
-                            <label><input type="checkbox" value="SYRUPS COMBI" /> SYRUPS COMBI</label>
-                            <label><input type="checkbox" value="SYRUPS HAMPER" /> SYRUPS HAMPER</label>
-                            <label><input type="checkbox" value="TOPPINGS" /> TOPPINGS</label>
-                            <label><input type="checkbox" value="TRADING" /> TRADING</label>
-                            <label><input type="checkbox" value="UMBRELLA" /> UMBRELLA</label>
-                            <label><input type="checkbox" value="WATER BOTTLE" /> WATER BOTTLE</label>
-                            <label><input type="checkbox" value="White Mug" /> White Mug</label>
-                            <label><input type="checkbox" value="WIRE BAG" /> WIRE BAG</label>
-                            <label><input type="checkbox" value="ZERO ADDED CHOCOLATE" /> ZERO ADDED CHOCOLATE</label>
-                            <label><input type="checkbox" value="ZERO ADDED PRESERVE" /> ZERO ADDED PRESERVE</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="control-group">
-                    <label>Brand</label>
-                    <div class="dropdown filter-group" data-field-name="brand">
-                        <button class="dropdown-button">Select Brand(s)</button>
-                        <div class="dropdown-content">
-                            <label><input type="checkbox" value="All" class="filter-all-cb" /> (All)</label>
-                            <label><input type="checkbox" value="FALERO" /> FALERO</label>
-                            <label><input type="checkbox" value="FOOD COUNTER" /> FOOD COUNTER</label>
-                            <label><input type="checkbox" value="LOUNGE" /> LOUNGE</label>
-                            <label><input type="checkbox" value="MAPRO" /> MAPRO</label>
-                            <label><input type="checkbox" value="MAZAANA" /> MAZAANA</label>
-                            <label><input type="checkbox" value="NA" /> NA</label>
-                            <label><input type="checkbox" value="OTHER" /> OTHER</label>
-                            <label><input type="checkbox" value="PRA" /> PRA</label>
-                            <label><input type="checkbox" value="SNACKERY" /> SNACKERY</label>
-                            <label><input type="checkbox" value="TBT" /> TBT</label>
-                            <label><input type="checkbox" value="TRADING GOODS" /> TRADING GOODS</label>
-                            <label><input type="checkbox" value="WHITTY" /> WHITTY</label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="param-group-container">
-                    <div class="control-group checkbox-group">
-                        <label>
-                            <input type="checkbox" class="param-change" data-param-name="Use Custom Range?">
-                            Use Custom Date Range
-                        </label>
-                    </div>
-                    <div class="param-sub-group">
-                        <div class="control-group">
-                            <label for="custom-ty-start">Custom TY Start</label>
-                            <input type="date" id="custom-ty-start" class="param-change" data-param-name="Custom Range Start">
-                        </div>
-                        <div class="control-group">
-                            <label for="custom-ty-end">Custom TY End</label>
-                            <input type="date" id="custom-ty-end" class="param-change" data-param-name="Custom Range End">
-                        </div>
-                        <div class="control-group">
-                            <label for="custom-ly-start">Custom LY Start</label>
-                            <input type="date" id="custom-ly-start" class="param-change" data-param-name="Custom Comparison Start">
-                        </div>
-                        <div class="control-group">
-                            <label for="custom-ly-end">Custom LY End</label>
-                            <input type="date" id="custom-ly-end" class="param-change" data-param-name="Custom Comparison End">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="param-group-container">
-                    <div class="control-group checkbox-group">
-                        <label>
-                            <input type="checkbox" class="param-change" data-param-name="Use Manual Date?">
-                            Use Manual Analysis Start Point
-                        </label>
-                    </div>
-                    <div class="param-sub-group">
-                        <div class="control-group">
-                            <label for="manual-analysis-start">Manual Analysis Start Point</label>
-                            <input type="date" id="manual-analysis-start" class="param-change" data-param-name="Manual Analysis Date">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="control-group button-group">
-                    <label>&nbsp;</label> <button id="apply-btn" class="apply-button">Apply Filters</button>
-                    <button id="clear-all-btn" class="clear-button">Clear All Filters</button>
+                <div class="action-bar">
+                    <button id="apply-btn" class="btn btn-apply">Apply Filters</button>
+                    <button id="clear-all-btn" class="btn btn-clear">Reset to Default</button>
                 </div>
             </div>
         </div>
-    </div> <div class="viz-wrapper">
-        <tableau-viz 
-            id="viz1"
-            src="https://prod-in-a.online.tableau.com/t/vikasg-ae2111f8b2/views/MGdahsboardV4/ExecutiveSummary"
-            toolbar="hidden" 
-            hide-tabs>
-        </tableau-viz>
     </div>
-
-    <hr class="viz-separator">
 
     <div class="viz-wrapper">
-        <tableau-viz 
-            id="viz2"
-            src="https://prod-in-a.online.tableau.com/t/vikasg-ae2111f8b2/views/MGdahsboardV4/Executive2"
-            toolbar="hidden" 
-            hide-tabs>
-        </tableau-viz>
+        <tableau-viz id="viz1" src="https://prod-in-a.online.tableau.com/t/vikasg-ae2111f8b2/views/MGdahsboardV4/ExecutiveSummary" toolbar="hidden" hide-tabs width="100%" height="800px"></tableau-viz>
+    </div>
+    <hr class="viz-separator">
+    <div class="viz-wrapper">
+        <tableau-viz id="viz3" src="https://prod-in-a.online.tableau.com/t/vikasg-ae2111f8b2/views/BranchReportsV1/Dashboard1" toolbar="hidden" hide-tabs width="100%" height="800px"></tableau-viz>
+    </div>
+    <hr class="viz-separator">
+    <div class="viz-wrapper">
+        <tableau-viz id="viz2" src="https://prod-in-a.online.tableau.com/t/vikasg-ae2111f8b2/views/MGdahsboardV4/Executive2" toolbar="hidden" hide-tabs width="100%" height="800px"></tableau-viz>
     </div>
 
-    <script>
+    <!-- Main Logic Module -->
+    <script type="module">
         document.addEventListener("DOMContentLoaded", () => {
-        
-            // --- Element references ---
-            const viz1 = document.getElementById("viz1");
-            const viz2 = document.getElementById("viz2");
-        
-            let vizObj1 = null;
-            let vizObj2 = null;
+            const viz1El = document.getElementById("viz1");
+            const viz2El = document.getElementById("viz2");
+            const viz3El = document.getElementById("viz3");
             let viz1Ready = false;
-            let viz2Ready = false;
-        
-            const filterPane = document.getElementById("filter-pane");
+
             const toggleButton = document.getElementById("toggle-filter-btn");
-            const clearAllButton = document.getElementById("clear-all-btn");
-            const applyButton = document.getElementById("apply-btn");
+            const filterPane = document.getElementById("filter-pane");
+            const applyBtn = document.getElementById("apply-btn");
+            const clearBtn = document.getElementById("clear-all-btn");
+
             const allFilterGroups = document.querySelectorAll(".filter-group");
             const allParamInputs = document.querySelectorAll(".param-change");
-            const allDropdownButtons = document.querySelectorAll(".dropdown-button");
-        
-            // --- Toggle Filter Pane ---
-            toggleButton.addEventListener("click", () => {
-                const isHidden = filterPane.style.display === "none";
-                filterPane.style.display = isHidden ? "block" : "none";
-                toggleButton.textContent = isHidden ? "X Close" : "☰ Page Filters";
+            const dropdownButtons = document.querySelectorAll(".dropdown-button");
+
+            let isInternalUpdate = false;
+            let savedDefaults = { filters: {}, parameters: {} };
+            // New: Track the last applied state to perform diffing
+            let lastAppliedState = { filters: {}, parameters: {} }; 
+            let defaultsLoaded = false;
+
+            // 1. INITIAL DEFAULT: Force check all boxes to avoid "empty" state on load
+            allFilterGroups.forEach(group => {
+                const allCb = group.querySelector(".filter-all-cb");
+                const others = group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)");
+                allCb.checked = true;
+                others.forEach(cb => cb.checked = true);
             });
-        
-            // --- Dropdown logic ---
-            allDropdownButtons.forEach(button => {
-                button.addEventListener("click", (e) => {
-                    allDropdownButtons.forEach(btn => {
-                        if (btn !== button) btn.nextElementSibling.style.display = "none";
+
+            /* --- UI Interaction --- */
+            toggleButton.addEventListener("click", () => {
+                const open = filterPane.style.display !== "block";
+                filterPane.style.display = open ? "block" : "none";
+                toggleButton.textContent = open ? "X Close" : "☰ Page Filters";
+            });
+
+            dropdownButtons.forEach(btn => {
+                btn.addEventListener("click", e => {
+                    document.querySelectorAll(".dropdown-content").forEach(c => {
+                        if (c !== btn.nextElementSibling) c.style.display = "none";
                     });
-                    const content = button.nextElementSibling;
-                    content.style.display = content.style.display === "block" ? "none" : "block";
+                    const c = btn.nextElementSibling;
+                    c.style.display = c.style.display === "block" ? "none" : "block";
                     e.stopPropagation();
                 });
             });
-        
-            document.querySelectorAll(".dropdown-content").forEach(content => {
-                content.addEventListener("click", e => e.stopPropagation());
-            });
-        
-            document.addEventListener("click", () => {
-                document.querySelectorAll(".dropdown-content").forEach(c => c.style.display = "none");
-            });
-        
-            // ------------------------------------------------------------------
-            // ---------------------- FILTER HANDLING ----------------------------
-            // ------------------------------------------------------------------
-        
-            async function applyToDashboardWorksheets(workbookObj, fieldName, values, updateType) {
-                try {
-                    const dashboard = workbookObj.activeSheet;
-                    const worksheets = dashboard.worksheets; 
-                    console.log(`...Applying filter to ${worksheets.length} sheets on dashboard ${dashboard.name}`);
-                    if (worksheets.length === 0) {
-                         console.warn("No worksheets found on dashboard:", dashboard.name);
-                         return;
-                    }
-                    const filterPromises = worksheets.map(ws => 
-                        ws.applyFilterAsync(fieldName, values, updateType)
-                    );
-                    return Promise.allSettled(filterPromises); 
-                } catch (e) {
-                    console.error("Error in applyToDashboardWorksheets:", e);
-                }
-            }
+            document.addEventListener("click", () => { document.querySelectorAll(".dropdown-content").forEach(c => c.style.display = "none"); });
+            document.querySelectorAll(".dropdown-content").forEach(c => { c.addEventListener("click", e => e.stopPropagation()); });
 
-            async function clearDashboardWorksheetsFilter(workbookObj, fieldName) {
-                 try {
-                    const dashboard = workbookObj.activeSheet;
-                    const worksheets = dashboard.worksheets; 
-                    console.log(`...Clearing filter from ${worksheets.length} sheets on dashboard ${dashboard.name}`);
-                    if (worksheets.length === 0) {
-                         console.warn("No worksheets found on dashboard:", dashboard.name);
-                         return;
-                    }
-                    const clearPromises = worksheets.map(ws => 
-                        ws.clearFilterAsync(fieldName)
-                    );
-                    return Promise.allSettled(clearPromises);
-                } catch (e) {
-                    console.error("Error in clearDashboardWorksheetsFilter:", e);
-                }
-            }
-        
-            // --- This function is called by Apply or Init ---
-            async function handleFilterChange(group, isInit = false) {
-                if (!viz1Ready) return; // Only need viz1
-                
-                if (!isInit) {
-                     await new Promise(r => setTimeout(r, 500)); // Delay for user clicks
-                }
-
-                const fieldName = group.dataset.fieldName;
+            function getSelectedValues(group) {
                 const allCb = group.querySelector(".filter-all-cb");
-                const checkboxes = group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)");
-                const selectedValues = Array.from(checkboxes)
-                    .filter(cb => cb.checked)
-                    .map(cb => cb.value);
-        
-                console.log(`Handling filter change for: ${fieldName}`);
-                try {
-                    if (allCb.checked) {
-                        const allValues = Array.from(checkboxes).map(cb => cb.value);
-                        console.log(`...Applying ALL ${allValues.length} values.`);
-                        if(allValues.length > 0) {
-                             await applyToDashboardWorksheets(vizObj1, fieldName, allValues, "replace");
-                        }
-                    } else if (selectedValues.length > 0) {
-                        console.log(`...Applying values: ${JSON.stringify(selectedValues)}`);
-                        await applyToDashboardWorksheets(vizObj1, fieldName, selectedValues, "replace");
-                    } else {
-                        console.log(`...No values selected. Clearing filter.`);
-                        await clearDashboardWorksheetsFilter(vizObj1, fieldName);
-                    }
-                    console.log(`Filter change complete for ${fieldName}.`);
-                } catch (err) {
-                    console.error(`Error applying filter ${fieldName}:`, err);
-                }
+                // OPTIMIZATION: If "Select All" is checked, return NULL.
+                // This tells Tableau to "Clear Filter" (show all) which is instantaneous,
+                // instead of sending a list of 50+ values to filter inclusively.
+                if (allCb.checked) return null; 
+
+                const others = Array.from(group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)"));
+                const selected = others.filter(cb => cb.checked).map(cb => cb.value);
+                return selected.length ? selected : null; 
             }
-            
-            // --- This is the user-clicked "Apply Filters" button ---
-            async function handleApplyAllFilters() {
-                if (!viz1Ready) return;
-                console.log("Applying all selected filters and parameters...");
-                await new Promise(r => setTimeout(r, 300)); // Short delay
 
-                // --- 1. Apply Filters ---
-                const filterSyncPromises = [];
-                for (const group of allFilterGroups) {
-                    filterSyncPromises.push(handleFilterChange(group, true)); // true = isInit/skipDelay
+            /* --- Apply Logic --- */
+            async function applyFilterToWorkbook(vizElement, fieldName, values) {
+                if (!vizElement || !vizElement.workbook) return;
+                const workbook = vizElement.workbook;
+                const dashboard = workbook.activeSheet;
+                const worksheets = dashboard.worksheets;
+                if (!worksheets || !worksheets.length) return;
+
+                if (values === null) {
+                    return Promise.allSettled(worksheets.map(ws => ws.clearFilterAsync(fieldName)));
                 }
-                await Promise.allSettled(filterSyncPromises);
-                console.log("All filters applied.");
-
-                // --- 2. Apply Parameters ---
-                const paramPromises = [];
-                allParamInputs.forEach(input => {
-                    paramPromises.push(handleParamChange(input, true)); // true = skipDelay
-                });
-                await Promise.allSettled(paramPromises);
-                console.log("All parameters applied.");
-
-                // --- 3. Close Pane ---
-                filterPane.style.display = 'none';
-                toggleButton.textContent = '☰ Page Filters';
+                return Promise.allSettled(worksheets.map(ws => ws.applyFilterAsync(fieldName, values, "replace")));
             }
-        
-            // --- "Clear All" logic ---
-            async function handleClearAll() {
-                if (!viz1Ready) return;
-                console.log("Resetting all filters & parameters to default...");
 
-                // 1. Revert Viz 1 to its published state.
-                try {
-                    await vizObj1.revertAllAsync();
-                    console.log("Viz 1 reverted to default.");
-                } catch (e) {
-                    console.error("Error reverting Viz 1:", e);
-                    return; // Stop if revert fails
-                }
-                
-                // 2. Reset HTML parameter controls
-                allParamInputs.forEach(inp => {
-                    if (inp.type === "checkbox") inp.checked = false;
-                    if (inp.type === "date") inp.value = "";
-                });
-                
-                // 3. Re-run the default sync logic.
-                await syncDefaults(true); // true = isReset
-                
-                console.log("All filters and parameters reset.");
-                
-                // 4. Close Pane
-                filterPane.style.display = 'none';
-                toggleButton.textContent = '☰ Page Filters';
+            async function applyParameterToWorkbook(vizElement, name, value) {
+                if (!vizElement || !vizElement.workbook) return;
+                try { await vizElement.workbook.changeParameterValueAsync(name, value); } catch (e) { console.warn("Parameter apply error:", name, e.message); }
             }
-        
-            // ------------------------------------------------------------------
-            // ---------------------- PARAMETER HANDLING ------------------------
-            // ------------------------------------------------------------------
-        
-            async function handleParamChange(input, skipDelay = false) {
-                if (!viz1Ready) return;
-                if (!skipDelay) await new Promise(r => setTimeout(r, 300));
-        
-                const paramName = input.dataset.paramName;
-                let value;
-        
-                if (input.type === "checkbox") {
-                    if (paramName === "Use Custom Range?") {
-                        value = input.checked ? "Custom Range View" : "Standard View (FY)";
-                    } else if (paramName === "Use Manual Date?") {
-                        value = input.checked ? "Yes" : "No-Keep Default";
-                    } else {
-                        value = input.checked; // Send boolean for any others
-                    }
-                } else {
-                    value = input.value; // Send date string
-                }
-        
-                console.log(`Changing parameter: ${paramName} = ${value} (Type: ${typeof value})`);
 
-                // Helper to check if param exists before changing
-                async function tryChange(workbook, pName, pValue) {
-                    try {
-                        const params = await workbook.getParametersAsync();
-                        const exists = params.some(p => p.name === pName);
+            // Helper to compare arrays for diffing
+            function areArraysEqual(arr1, arr2) {
+                // If both are null/undefined, they are equal
+                if (!arr1 && !arr2) return true;
+                // If one is null/undefined and other isn't, not equal
+                if (!arr1 || !arr2) return false;
+                // If lengths differ, not equal
+                if (arr1.length !== arr2.length) return false;
+                // Sort and compare string values
+                const sorted1 = [...arr1].sort();
+                const sorted2 = [...arr2].sort();
+                for (let i = 0; i < sorted1.length; i++) {
+                    if (sorted1[i] !== sorted2[i]) return false;
+                }
+                return true;
+            }
+
+            async function applyAll() {
+                isInternalUpdate = true;
+                filterPane.style.display = "none";
+                toggleButton.textContent = "☰ Page Filters";
+
+                const vizElements = [viz1El, viz2El, viz3El];
+                const tasks = [];
+
+                // Filter Logic with DIFFING (Dirty Checking)
+                allFilterGroups.forEach(group => {
+                    const field = group.dataset.fieldName;
+                    const currentValues = getSelectedValues(group);
+                    
+                    // Check if this filter has actually changed since last apply
+                    // Note: undefined in lastAppliedState implies it hasn't been tracked yet, so we apply.
+                    const previousValues = lastAppliedState.filters[field];
+
+                    const hasChanged = !areArraysEqual(currentValues, previousValues);
+
+                    if (hasChanged) {
+                        // Update State
+                        lastAppliedState.filters[field] = currentValues;
                         
-                        if (exists) {
-                            await workbook.changeParameterValueAsync(pName, pValue);
-                        } else {
-                            console.log(`Parameter ${pName} does not exist on ${workbook.name}, skipping.`);
-                        }
-                    } catch (e) {
-                        console.warn(`Parameter ${pName} not applied on one viz:`, e.message);
+                        // Add tasks
+                        vizElements.forEach(el => tasks.push(applyFilterToWorkbook(el, field, currentValues)));
+                    } else {
+                        console.log(`Skipping unchanged filter: ${field}`);
                     }
-                }
-        
-                // --- Simplified to only call Viz 1 ---
-                await tryChange(vizObj1, paramName, value);
-            }
-        
-            // ------------------------------------------------------------------
-            // ---------------------- INITIALIZATION ----------------------------
-            // ------------------------------------------------------------------
+                });
 
-            // --- This function syncs the HTML to Viz 1's state ---
-            async function syncDefaults(isReset = false) {
-                console.log("Syncing defaults, filters, params...");
-                
-                // --- Read default filters from Viz 1 (robustly) ---
+                // Parameter Logic with DIFFING
+                allParamInputs.forEach(input => {
+                    const name = input.dataset.paramName;
+                    let val;
+                    
+                    if (input.type === "checkbox") {
+                        if (name === "Use Custom Range?") {
+                            val = input.checked ? "Custom Range View" : "Standard View (FY)";
+                        } else if (name === "Use Manual Date?") {
+                            val = input.checked ? "Yes" : "No-Keep Default";
+                        } else {
+                            val = input.checked; 
+                        }
+                    } else {
+                        val = input.value; 
+                    }
+
+                    if (val !== undefined && val !== null) { 
+                        const prevVal = lastAppliedState.parameters[name];
+                        if (val !== prevVal) {
+                            // Update State
+                            lastAppliedState.parameters[name] = val;
+                            
+                            // Add tasks
+                            vizElements.forEach(el => tasks.push(applyParameterToWorkbook(el, name, val)));
+                        } else {
+                            console.log(`Skipping unchanged parameter: ${name}`);
+                        }
+                    }
+                });
+
+                if (tasks.length === 0) {
+                    console.log("No changes detected. Nothing to apply.");
+                    setTimeout(() => { isInternalUpdate = false; }, 500);
+                    return;
+                }
+
+                console.log(`Applying ${tasks.length} changes...`);
+                await Promise.allSettled(tasks);
+                setTimeout(() => { isInternalUpdate = false; }, 1000);
+                console.log("Apply completed.");
+            }
+
+            /* --- SYNC DEFAULT LOGIC (FIXED) --- */
+            async function syncDefaultsFromViz1() {
+                if (!viz1El.workbook) return;
                 try {
-                    console.log("Attempting to read default filters from Viz 1...");
-                    const dashboard = vizObj1.activeSheet;
-                    const worksheets = dashboard.worksheets || [];
-                    if (!worksheets.length) throw new Error("No worksheets found on dashboard.");
-        
-                    const appliedFilterMap = new Map();
-                    for (const ws of worksheets) {
-                        console.log(`...checking filters on sheet ${ws.name}`);
-                        const filters = await ws.getFiltersAsync();
+                    console.log("Syncing initial state from Tableau...");
+                    const dashboard = viz1El.workbook.activeSheet;
+                    const worksheets = dashboard.worksheets;
+                    
+                    const appliedMap = new Map(); 
+                    const filterPromises = worksheets.map(ws => ws.getFiltersAsync());
+                    const allFiltersArrays = await Promise.all(filterPromises);
+
+                    for (const filters of allFiltersArrays) {
                         for (const f of filters) {
-                            if (f.filterType === 'categorical' && !f.isAll) {
-                                const values = f.appliedValues.map(v => v.value);
-                                appliedFilterMap.set(f.fieldName, values);
+                            if (f.filterType === "categorical") {
+                                const keyName = f.fieldName.toLowerCase().trim();
+                                const existing = appliedMap.get(keyName);
+                                if (existing && existing.isAllSelected) continue;
+
+                                const vals = new Set();
+                                f.appliedValues.forEach(v => {
+                                    vals.add(String(v.value).trim().toUpperCase());
+                                    if (v.formattedValue) vals.add(String(v.formattedValue).trim().toUpperCase());
+                                });
+
+                                appliedMap.set(keyName, { isAllSelected: f.isAllSelected, values: vals, originalName: f.fieldName });
                             }
                         }
                     }
-                    console.log("Found applied filters:", appliedFilterMap);
-
-                    // Now update the HTML based on the map
+                    
                     allFilterGroups.forEach(group => {
-                        const fName = group.dataset.fieldName;
+                        const rawFieldName = group.dataset.fieldName;
+                        const fieldKey = rawFieldName.toLowerCase().trim();
+                        
                         const allCb = group.querySelector(".filter-all-cb");
-                        const others = group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)");
-
-                        if (appliedFilterMap.has(fName)) {
-                            const applied = appliedFilterMap.get(fName);
-                            if (applied.length > 0) {
-                                console.log(`Setting default filter for ${fName}:`, applied);
-                                others.forEach(cb => {
-                                    cb.checked = applied.includes(cb.value);
-                                });
-                                allCb.checked = Array.from(others).every(c => c.checked);
-                            } else {
-                                console.log(`Filter ${fName} was found but empty, setting to (All).`);
+                        const others = Array.from(group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)"));
+                        
+                        if (appliedMap.has(fieldKey)) {
+                            const data = appliedMap.get(fieldKey);
+                            
+                            if (data.isAllSelected) {
                                 allCb.checked = true;
                                 others.forEach(cb => cb.checked = true);
+                                // Initialize tracking state as NULL (since "All" = null in our logic)
+                                lastAppliedState.filters[rawFieldName] = null;
+                            } else {
+                                others.forEach(cb => {
+                                    const htmlVal = cb.value.trim().toUpperCase();
+                                    const isChecked = data.values.has(htmlVal);
+                                    cb.checked = isChecked;
+                                });
+
+                                const allChecked = others.every(cb => cb.checked);
+                                allCb.checked = allChecked;
+                                
+                                // Initialize tracking state
+                                if (allChecked) {
+                                    lastAppliedState.filters[rawFieldName] = null;
+                                } else {
+                                    lastAppliedState.filters[rawFieldName] = others.filter(cb => cb.checked).map(cb => cb.value);
+                                }
                             }
                         } else {
-                            console.log(`No default filter found for ${fName}, setting to (All).`);
                             allCb.checked = true;
                             others.forEach(cb => cb.checked = true);
+                            lastAppliedState.filters[rawFieldName] = null;
                         }
                     });
-        
-                } catch (e) {
-                    console.warn("Could not read default filters, defaulting to (All):", e.message);
-                    // Fallback
-                    allFilterGroups.forEach(group => {
-                        group.querySelector(".filter-all-cb").checked = true;
-                        group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)").forEach(cb => cb.checked = true);
+
+                    // Parameters
+                    const params = await viz1El.workbook.getParametersAsync();
+                    const paramMap = new Map();
+                    params.forEach(p => paramMap.set(p.name, p.currentValue.value));
+                    
+                    allParamInputs.forEach(input => {
+                        const pName = input.dataset.paramName;
+                        if(paramMap.has(pName)) {
+                            const pVal = paramMap.get(pName);
+                            let finalVal;
+                            if (input.type === "checkbox") {
+                                input.checked = (pVal === true || pVal === "true" || pVal === "Custom Range View" || pVal === "Yes");
+                                
+                                // Reconstruct the value we send to Tableau for tracking
+                                if (pName === "Use Custom Range?") finalVal = input.checked ? "Custom Range View" : "Standard View (FY)";
+                                else if (pName === "Use Manual Date?") finalVal = input.checked ? "Yes" : "No-Keep Default";
+                                else finalVal = input.checked;
+
+                            } else {
+                                let dateStr = pVal; 
+                                if(dateStr && dateStr.length > 10) dateStr = dateStr.substring(0, 10);
+                                input.value = dateStr;
+                                finalVal = input.value;
+                            }
+                            // Initialize tracking
+                            lastAppliedState.parameters[pName] = finalVal;
+                        }
                     });
-                }
-                
-                // --- No Viz 2 filter sync needed ---
-        
-                // Sync parameter defaults from current HTML state
-                console.log("Syncing default parameters...");
-                const paramPromises = [];
-                allParamInputs.forEach(input => {
-                    // On initial load, sync checked boxes. On reset, sync all.
-                    if (isReset || (input.type === "checkbox" && input.checked) || (input.type === "date" && input.value)) {
-                        paramPromises.push(handleParamChange(input, true)); // true = skipDelay
+
+                    if (!defaultsLoaded) {
+                        saveCurrentStateAsDefaults();
+                        defaultsLoaded = true;
                     }
-                });
-                await Promise.allSettled(paramPromises);
-        
-                console.log("Initialization/Sync complete.");
+
+                } catch (e) {
+                    console.warn("Default sync failed:", e.message);
+                }
             }
 
-            // --- This function runs ONCE on load ---
-            async function initializeApp() {
-                console.log("Both vizzes ready. Wiring listeners and syncing defaults.");
+            function saveCurrentStateAsDefaults() {
+                allFilterGroups.forEach(group => {
+                    const field = group.dataset.fieldName;
+                    const allCb = group.querySelector(".filter-all-cb");
+                    const others = Array.from(group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)"));
+                    
+                    savedDefaults.filters[field] = {
+                        allChecked: allCb.checked,
+                        values: others.filter(cb => cb.checked).map(cb => cb.value)
+                    };
+                });
+
+                allParamInputs.forEach(input => {
+                    const name = input.dataset.paramName;
+                    if (input.type === "checkbox") savedDefaults.parameters[name] = input.checked;
+                    else savedDefaults.parameters[name] = input.value;
+                });
+            }
+
+            async function clearAll() {
+                isInternalUpdate = true; 
+                filterPane.style.display = "none";
+                toggleButton.textContent = "☰ Page Filters";
+
+                if (!defaultsLoaded) return;
+
+                restoreUIFromDefaults();
+
+                // Reset our tracking state to match the restored defaults
+                // Use simple loop to reset state memory so next Apply works correctly
+                allFilterGroups.forEach(group => {
+                    const field = group.dataset.fieldName;
+                    const allCb = group.querySelector(".filter-all-cb");
+                    if (allCb.checked) lastAppliedState.filters[field] = null;
+                    else {
+                        const others = Array.from(group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)"));
+                        lastAppliedState.filters[field] = others.filter(cb => cb.checked).map(cb => cb.value);
+                    }
+                });
+                allParamInputs.forEach(input => {
+                     const name = input.dataset.paramName;
+                     // (Similar logic to syncDefaults to reconstruct param string value could go here, 
+                     // but simplified reset ensures diffing triggers on next change if needed)
+                     // Actually, clearing usually reverts to defaults, so we should wipe tracking to force re-apply if unsure,
+                     // OR we can just rely on revertAllAsync doing the work and then we re-sync.
+                     // For safety/simplicity, we won't update lastAppliedState parameters here, relying on revertAllAsync.
+                });
+
+
+                const revertPromises = [viz1El, viz2El, viz3El].map(el => {
+                    if (el && el.workbook) return el.revertAllAsync();
+                    return Promise.resolve();
+                });
+
+                await Promise.allSettled(revertPromises);
                 
-                // Wire filter listeners (UI only)
+                // Re-sync our local state tracker after revert to ensure accuracy
+                setTimeout(() => { 
+                    syncDefaultsFromViz1(); 
+                    isInternalUpdate = false; 
+                }, 1000);
+                
+                console.log("Reset to defaults complete.");
+            }
+
+            function restoreUIFromDefaults() {
+                allFilterGroups.forEach(group => {
+                    const field = group.dataset.fieldName;
+                    if (savedDefaults.filters[field]) {
+                        const saved = savedDefaults.filters[field];
+                        const allCb = group.querySelector(".filter-all-cb");
+                        const others = Array.from(group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)"));
+                        
+                        allCb.checked = saved.allChecked;
+                        others.forEach(cb => {
+                            cb.checked = saved.values.includes(cb.value);
+                        });
+                    }
+                });
+
+                allParamInputs.forEach(input => {
+                    const name = input.dataset.paramName;
+                    if (savedDefaults.parameters.hasOwnProperty(name)) {
+                        const val = savedDefaults.parameters[name];
+                        if (input.type === "checkbox") input.checked = val;
+                        else input.value = val;
+                    }
+                });
+            }
+
+            function initialize() {
                 allFilterGroups.forEach(group => {
                     const allCb = group.querySelector(".filter-all-cb");
                     const others = group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)");
-
                     allCb.addEventListener("change", () => {
-                        const isChecked = allCb.checked;
-                        others.forEach(cb => cb.checked = isChecked);
-                        // NO API CALL HERE
+                        others.forEach(cb => cb.checked = allCb.checked);
                     });
-
                     others.forEach(cb => {
                         cb.addEventListener("change", () => {
-                            if (!cb.checked) {
-                                allCb.checked = false; // Uncheck (All) if one is unchecked
-                            } else {
-                                const allOthersChecked = Array.from(others).every(c => c.checked);
-                                allCb.checked = allOthersChecked; // Sync (All)
-                            }
-                            // NO API CALL HERE
+                            allCb.checked = Array.from(others).every(c => c.checked);
                         });
                     });
                 });
-        
-                // --- REMOVED Param Listeners ---
-        
-                // --- Button Listeners ---
-                applyButton.addEventListener("click", handleApplyAllFilters);
-                clearAllButton.addEventListener("click", handleClearAll);
 
-                // Run the initial sync
-                await syncDefaults(false); // false = not a reset
+                applyBtn.addEventListener("click", applyAll);
+                clearBtn.addEventListener("click", clearAll);
+
+                // Give Tableau a moment to settle before syncing
+                setTimeout(syncDefaultsFromViz1, 2000);
             }
-        
-            // --- Viz readiness ---
-            viz1.addEventListener("firstinteractive", async () => {
-                console.log("Viz 1 is ready.");
-                vizObj1 = viz1.workbook;
-                viz1Ready = true;
-                if (viz2Ready) await initializeApp(); 
-            });
-        
-            viz2.addEventListener("firstinteractive", async () => {
-                console.log("Viz 2 is ready.");
-                vizObj2 = viz2.workbook; 
-                viz2Ready = true;
-                if (viz1Ready) await initializeApp();
+
+            // Initialize as soon as Viz 1 is ready
+            viz1El.addEventListener("firstinteractive", () => {
+                if (!viz1Ready) {
+                    viz1Ready = true;
+                    console.log("Viz 1 Ready - Initializing UI");
+                    initialize(); 
+                }
             });
         });
     </script>

@@ -329,11 +329,36 @@
 
             let isInternalUpdate = false;
             let savedDefaults = { filters: {}, parameters: {} };
-            // New: Track the last applied state to perform diffing
             let lastAppliedState = { filters: {}, parameters: {} }; 
             let defaultsLoaded = false;
 
-            // 1. INITIAL DEFAULT: Force check all boxes to avoid "empty" state on load
+            // =========================================================================
+            // 1. CONFIGURATION: PARAMETER MAPPING (Fixed: All are String Types)
+            // =========================================================================
+            const PARAMETER_MAPPINGS = {
+                "viz1": { 
+                    "Use Custom Range?": { name: "Use Custom Range?", valueMap: { true: "Custom Range View", false: "Standard View (FY)" } },
+                    "Use Manual Date?": { name: "Use Manual Date?", valueMap: { true: "Yes", false: "No-Keep Default" } }
+                },
+                "viz3": {
+                    // Applied same text mapping as Viz 1
+                    "Use Custom Range?": { name: "Use Custom Range?", valueMap: { true: "Yes", false: "No-Keep Default" } },
+                    "Use Manual Date?": { name: "Use Manual Date?", valueMap: { true: "Yes", false: "No-Keep Default" } }
+                },
+                "viz2": {
+                     // Applied same text mapping as Viz 1 (Assuming Viz 2 uses same text values)
+                    "Use Custom Range?": { 
+                        name: "Use Custom Range?", 
+                        valueMap: { true: "Custom Range View", false: "Standard View (FY)" } 
+                    },
+                    "Use Manual Date?": { 
+                        name: "Use Manual Date?", 
+                        valueMap: { true: "Yes", false: "No-Keep Default" } 
+                    }
+                }
+            };
+
+            // 1. INITIAL DEFAULT: Force check all boxes
             allFilterGroups.forEach(group => {
                 const allCb = group.querySelector(".filter-all-cb");
                 const others = group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)");
@@ -363,11 +388,7 @@
 
             function getSelectedValues(group) {
                 const allCb = group.querySelector(".filter-all-cb");
-                // OPTIMIZATION: If "Select All" is checked, return NULL.
-                // This tells Tableau to "Clear Filter" (show all) which is instantaneous,
-                // instead of sending a list of 50+ values to filter inclusively.
                 if (allCb.checked) return null; 
-
                 const others = Array.from(group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)"));
                 const selected = others.filter(cb => cb.checked).map(cb => cb.value);
                 return selected.length ? selected : null; 
@@ -387,20 +408,38 @@
                 return Promise.allSettled(worksheets.map(ws => ws.applyFilterAsync(fieldName, values, "replace")));
             }
 
-            async function applyParameterToWorkbook(vizElement, name, value) {
+            // --- REVISED PARAMETER FUNCTION ---
+            async function applyParameterToWorkbook(vizElement, htmlParamID, rawValue) {
                 if (!vizElement || !vizElement.workbook) return;
-                try { await vizElement.workbook.changeParameterValueAsync(name, value); } catch (e) { console.warn("Parameter apply error:", name, e.message); }
+
+                const vizID = vizElement.id; 
+                const config = PARAMETER_MAPPINGS[vizID];
+                
+                let targetName = htmlParamID;
+                let targetValue = rawValue;
+
+                if (config && config[htmlParamID]) {
+                    targetName = config[htmlParamID].name;
+                    const map = config[htmlParamID].valueMap;
+                    
+                    // If map exists, we translate boolean -> String
+                    if (map) {
+                        // We check "true" or "false" as strings to be safe with keys
+                        targetValue = map[String(rawValue)];
+                    }
+                }
+
+                try { 
+                    await vizElement.workbook.changeParameterValueAsync(targetName, targetValue); 
+                } catch (e) { 
+                    console.error(`Error in ${vizID} for param '${targetName}' with value '${targetValue}':`, e.message); 
+                }
             }
 
-            // Helper to compare arrays for diffing
             function areArraysEqual(arr1, arr2) {
-                // If both are null/undefined, they are equal
                 if (!arr1 && !arr2) return true;
-                // If one is null/undefined and other isn't, not equal
                 if (!arr1 || !arr2) return false;
-                // If lengths differ, not equal
                 if (arr1.length !== arr2.length) return false;
-                // Sort and compare string values
                 const sorted1 = [...arr1].sort();
                 const sorted2 = [...arr2].sort();
                 for (let i = 0; i < sorted1.length; i++) {
@@ -417,76 +456,51 @@
                 const vizElements = [viz1El, viz2El, viz3El];
                 const tasks = [];
 
-                // Filter Logic with DIFFING (Dirty Checking)
+                // 1. Filters
                 allFilterGroups.forEach(group => {
                     const field = group.dataset.fieldName;
                     const currentValues = getSelectedValues(group);
-                    
-                    // Check if this filter has actually changed since last apply
-                    // Note: undefined in lastAppliedState implies it hasn't been tracked yet, so we apply.
                     const previousValues = lastAppliedState.filters[field];
 
-                    const hasChanged = !areArraysEqual(currentValues, previousValues);
-
-                    if (hasChanged) {
-                        // Update State
+                    if (!areArraysEqual(currentValues, previousValues)) {
                         lastAppliedState.filters[field] = currentValues;
-                        
-                        // Add tasks
                         vizElements.forEach(el => tasks.push(applyFilterToWorkbook(el, field, currentValues)));
-                    } else {
-                        console.log(`Skipping unchanged filter: ${field}`);
                     }
                 });
 
-                // Parameter Logic with DIFFING
+                // 2. Parameters
                 allParamInputs.forEach(input => {
-                    const name = input.dataset.paramName;
+                    const htmlID = input.dataset.paramName;
                     let val;
                     
                     if (input.type === "checkbox") {
-                        if (name === "Use Custom Range?") {
-                            val = input.checked ? "Custom Range View" : "Standard View (FY)";
-                        } else if (name === "Use Manual Date?") {
-                            val = input.checked ? "Yes" : "No-Keep Default";
-                        } else {
-                            val = input.checked; 
-                        }
+                        val = input.checked; 
                     } else {
                         val = input.value; 
                     }
 
                     if (val !== undefined && val !== null) { 
-                        const prevVal = lastAppliedState.parameters[name];
+                        const prevVal = lastAppliedState.parameters[htmlID];
                         if (val !== prevVal) {
-                            // Update State
-                            lastAppliedState.parameters[name] = val;
-                            
-                            // Add tasks
-                            vizElements.forEach(el => tasks.push(applyParameterToWorkbook(el, name, val)));
-                        } else {
-                            console.log(`Skipping unchanged parameter: ${name}`);
+                            lastAppliedState.parameters[htmlID] = val;
+                            vizElements.forEach(el => tasks.push(applyParameterToWorkbook(el, htmlID, val)));
                         }
                     }
                 });
 
                 if (tasks.length === 0) {
-                    console.log("No changes detected. Nothing to apply.");
                     setTimeout(() => { isInternalUpdate = false; }, 500);
                     return;
                 }
 
-                console.log(`Applying ${tasks.length} changes...`);
                 await Promise.allSettled(tasks);
                 setTimeout(() => { isInternalUpdate = false; }, 1000);
-                console.log("Apply completed.");
             }
 
-            /* --- SYNC DEFAULT LOGIC (FIXED) --- */
+            /* --- SYNC DEFAULT LOGIC --- */
             async function syncDefaultsFromViz1() {
                 if (!viz1El.workbook) return;
                 try {
-                    console.log("Syncing initial state from Tableau...");
                     const dashboard = viz1El.workbook.activeSheet;
                     const worksheets = dashboard.worksheets;
                     
@@ -506,7 +520,6 @@
                                     vals.add(String(v.value).trim().toUpperCase());
                                     if (v.formattedValue) vals.add(String(v.formattedValue).trim().toUpperCase());
                                 });
-
                                 appliedMap.set(keyName, { isAllSelected: f.isAllSelected, values: vals, originalName: f.fieldName });
                             }
                         }
@@ -515,34 +528,23 @@
                     allFilterGroups.forEach(group => {
                         const rawFieldName = group.dataset.fieldName;
                         const fieldKey = rawFieldName.toLowerCase().trim();
-                        
                         const allCb = group.querySelector(".filter-all-cb");
                         const others = Array.from(group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)"));
                         
                         if (appliedMap.has(fieldKey)) {
                             const data = appliedMap.get(fieldKey);
-                            
                             if (data.isAllSelected) {
                                 allCb.checked = true;
                                 others.forEach(cb => cb.checked = true);
-                                // Initialize tracking state as NULL (since "All" = null in our logic)
                                 lastAppliedState.filters[rawFieldName] = null;
                             } else {
                                 others.forEach(cb => {
                                     const htmlVal = cb.value.trim().toUpperCase();
-                                    const isChecked = data.values.has(htmlVal);
-                                    cb.checked = isChecked;
+                                    cb.checked = data.values.has(htmlVal);
                                 });
-
                                 const allChecked = others.every(cb => cb.checked);
                                 allCb.checked = allChecked;
-                                
-                                // Initialize tracking state
-                                if (allChecked) {
-                                    lastAppliedState.filters[rawFieldName] = null;
-                                } else {
-                                    lastAppliedState.filters[rawFieldName] = others.filter(cb => cb.checked).map(cb => cb.value);
-                                }
+                                lastAppliedState.filters[rawFieldName] = allChecked ? null : others.filter(cb => cb.checked).map(cb => cb.value);
                             }
                         } else {
                             allCb.checked = true;
@@ -551,32 +553,43 @@
                         }
                     });
 
-                    // Parameters
+                    // Parameters Sync
                     const params = await viz1El.workbook.getParametersAsync();
                     const paramMap = new Map();
                     params.forEach(p => paramMap.set(p.name, p.currentValue.value));
                     
-                    allParamInputs.forEach(input => {
-                        const pName = input.dataset.paramName;
-                        if(paramMap.has(pName)) {
-                            const pVal = paramMap.get(pName);
-                            let finalVal;
-                            if (input.type === "checkbox") {
-                                input.checked = (pVal === true || pVal === "true" || pVal === "Custom Range View" || pVal === "Yes");
-                                
-                                // Reconstruct the value we send to Tableau for tracking
-                                if (pName === "Use Custom Range?") finalVal = input.checked ? "Custom Range View" : "Standard View (FY)";
-                                else if (pName === "Use Manual Date?") finalVal = input.checked ? "Yes" : "No-Keep Default";
-                                else finalVal = input.checked;
+                    const v1Config = PARAMETER_MAPPINGS["viz1"];
 
+                    allParamInputs.forEach(input => {
+                        const htmlID = input.dataset.paramName;
+                        let tableauName = htmlID;
+                        let valueMap = null;
+                        if(v1Config && v1Config[htmlID]) {
+                            tableauName = v1Config[htmlID].name;
+                            valueMap = v1Config[htmlID].valueMap;
+                        }
+
+                        if(paramMap.has(tableauName)) {
+                            const pVal = paramMap.get(tableauName);
+                            let finalVal;
+                            
+                            if (input.type === "checkbox") {
+                                // Reverse lookup based on Value Map
+                                if (valueMap) {
+                                    const key = Object.keys(valueMap).find(k => valueMap[k] === pVal);
+                                    input.checked = (key === "true");
+                                    finalVal = input.checked;
+                                } else {
+                                    input.checked = (pVal === true || pVal === "true" || pVal === "Yes");
+                                    finalVal = input.checked;
+                                }
                             } else {
                                 let dateStr = pVal; 
                                 if(dateStr && dateStr.length > 10) dateStr = dateStr.substring(0, 10);
                                 input.value = dateStr;
                                 finalVal = input.value;
                             }
-                            // Initialize tracking
-                            lastAppliedState.parameters[pName] = finalVal;
+                            lastAppliedState.parameters[htmlID] = finalVal;
                         }
                     });
 
@@ -595,13 +608,11 @@
                     const field = group.dataset.fieldName;
                     const allCb = group.querySelector(".filter-all-cb");
                     const others = Array.from(group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)"));
-                    
                     savedDefaults.filters[field] = {
                         allChecked: allCb.checked,
                         values: others.filter(cb => cb.checked).map(cb => cb.value)
                     };
                 });
-
                 allParamInputs.forEach(input => {
                     const name = input.dataset.paramName;
                     if (input.type === "checkbox") savedDefaults.parameters[name] = input.checked;
@@ -615,11 +626,8 @@
                 toggleButton.textContent = "☰ Page Filters";
 
                 if (!defaultsLoaded) return;
-
                 restoreUIFromDefaults();
 
-                // Reset our tracking state to match the restored defaults
-                // Use simple loop to reset state memory so next Apply works correctly
                 allFilterGroups.forEach(group => {
                     const field = group.dataset.fieldName;
                     const allCb = group.querySelector(".filter-all-cb");
@@ -629,15 +637,6 @@
                         lastAppliedState.filters[field] = others.filter(cb => cb.checked).map(cb => cb.value);
                     }
                 });
-                allParamInputs.forEach(input => {
-                     const name = input.dataset.paramName;
-                     // (Similar logic to syncDefaults to reconstruct param string value could go here, 
-                     // but simplified reset ensures diffing triggers on next change if needed)
-                     // Actually, clearing usually reverts to defaults, so we should wipe tracking to force re-apply if unsure,
-                     // OR we can just rely on revertAllAsync doing the work and then we re-sync.
-                     // For safety/simplicity, we won't update lastAppliedState parameters here, relying on revertAllAsync.
-                });
-
 
                 const revertPromises = [viz1El, viz2El, viz3El].map(el => {
                     if (el && el.workbook) return el.revertAllAsync();
@@ -646,13 +645,10 @@
 
                 await Promise.allSettled(revertPromises);
                 
-                // Re-sync our local state tracker after revert to ensure accuracy
                 setTimeout(() => { 
                     syncDefaultsFromViz1(); 
                     isInternalUpdate = false; 
                 }, 1000);
-                
-                console.log("Reset to defaults complete.");
             }
 
             function restoreUIFromDefaults() {
@@ -662,14 +658,12 @@
                         const saved = savedDefaults.filters[field];
                         const allCb = group.querySelector(".filter-all-cb");
                         const others = Array.from(group.querySelectorAll("input[type='checkbox']:not(.filter-all-cb)"));
-                        
                         allCb.checked = saved.allChecked;
                         others.forEach(cb => {
                             cb.checked = saved.values.includes(cb.value);
                         });
                     }
                 });
-
                 allParamInputs.forEach(input => {
                     const name = input.dataset.paramName;
                     if (savedDefaults.parameters.hasOwnProperty(name)) {
@@ -696,16 +690,12 @@
 
                 applyBtn.addEventListener("click", applyAll);
                 clearBtn.addEventListener("click", clearAll);
-
-                // Give Tableau a moment to settle before syncing
                 setTimeout(syncDefaultsFromViz1, 2000);
             }
 
-            // Initialize as soon as Viz 1 is ready
             viz1El.addEventListener("firstinteractive", () => {
                 if (!viz1Ready) {
                     viz1Ready = true;
-                    console.log("Viz 1 Ready - Initializing UI");
                     initialize(); 
                 }
             });
